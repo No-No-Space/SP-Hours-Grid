@@ -2,7 +2,7 @@
 
 > Created: 2026-11-01 / by Aksel Alvarez Jurgueson & Claude
 > Last updated: 2026-11-01 / by Claude
-> Version: v0.2
+> Version: v0.2.1
 
 A [Super Productivity](https://super-productivity.com) plugin that shows tracked time as a timesheet: **tasks grouped by project in rows, days in columns**, with a tag filter, configurable rounding and export to CSV or the clipboard.
 
