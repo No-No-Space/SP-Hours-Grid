@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Timesheets</title>
+<style>
+  /* Colours come from the theme variables Super Productivity injects into plugin iframes,
+     so the table follows whichever theme the app uses. Fallbacks are for standalone preview. */
+  :root {
+    --ts-bg: var(--bg, #fafafa);
+    --ts-card: var(--card-bg, #ffffff);
+    --ts-text: var(--text-color, #1f1f1f);
+    --ts-muted: color-mix(in srgb, var(--ts-text) 55%, transparent);
+    --ts-line: color-mix(in srgb, var(--ts-text) 14%, transparent);
+    --ts-accent: var(--c-primary, #1e88e5);
+    --ts-sub: color-mix(in srgb, var(--ts-accent) 10%, var(--ts-card));
+    --ts-gap: var(--s, 8px);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: calc(var(--ts-gap) * 2); background: var(--ts-bg); color: var(--ts-text);
+         font: 14px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  h1 { font-size: 18px; margin: 0 0 var(--ts-gap); }
+  .bar { display: flex; flex-wrap: wrap; gap: var(--ts-gap) calc(var(--ts-gap) * 2); align-items: end;
+         margin-bottom: calc(var(--ts-gap) * 2); }
+  .field { display: flex; flex-direction: column; gap: 2px; }
+  .field > span { font-size: 12px; color: var(--ts-muted); }
+  select, input, button { font: inherit; color: inherit; background: var(--ts-card);
+         border: 1px solid var(--ts-line); border-radius: 6px; padding: 4px 8px; }
+  button { cursor: pointer; }
+  button:hover { border-color: var(--ts-accent); }
+  button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--ts-accent); outline-offset: 1px; }
+  .group { display: flex; gap: 4px; }
+  .wrap { overflow-x: auto; background: var(--ts-card); border: 1px solid var(--ts-line); border-radius: 8px; }
+  table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+  th, td { padding: 4px 8px; border-bottom: 1px solid var(--ts-line); white-space: nowrap; }
+  th { font-weight: 600; text-align: right; position: sticky; top: 0; background: var(--ts-card); }
+  th:first-child, td:first-child { text-align: left; white-space: normal; min-width: 220px; }
+  td { text-align: right; }
+  th.weekend, td.weekend { background: color-mix(in srgb, var(--ts-text) 4%, transparent); }
+  th.today { color: var(--ts-accent); }
+  tr.project td { font-weight: 600; background: var(--ts-sub); }
+  tr.task td:first-child { padding-left: 24px; }
+  tr.task.done td:first-child { color: var(--ts-muted); }
+  tr.task td.exact { color: var(--ts-muted); }
+  tr.grand td { font-weight: 700; border-top: 2px solid var(--ts-text); border-bottom: 0; }
+  td.total, th.total { border-left: 1px solid var(--ts-line); }
+  .day-name { display: block; font-size: 11px; font-weight: 400; color: var(--ts-muted); }
+  .note { margin-top: var(--ts-gap); font-size: 12px; color: var(--ts-muted); }
+  .empty { padding: calc(var(--ts-gap) * 3); text-align: center; color: var(--ts-muted); }
+  .status { min-height: 1.4em; font-size: 12px; color: var(--ts-muted); margin-top: var(--ts-gap); }
+</style>
+</head>
+<body>
+<h1>Timesheets</h1>
+
+<div class="bar">
+  <div class="field"><span>Range</span>
+    <div class="group">
+      <button id="prev" title="Previous period" aria-label="Previous period">‹</button>
+      <select id="preset">
+        <option value="week">Week</option>
+        <option value="month">Month</option>
+        <option value="custom">Custom</option>
+      </select>
+      <button id="next" title="Next period" aria-label="Next period">›</button>
+      <button id="today">Today</button>
+    </div>
+  </div>
+  <label class="field"><span>From</span><input type="date" id="from"></label>
+  <label class="field"><span>To</span><input type="date" id="to"></label>
+  <label class="field"><span>Round to</span>
+    <select id="step">
+      <option value="0">No rounding</option>
+      <option value="15">15 min</option>
+      <option value="30">30 min</option>
+      <option value="60">1 hour</option>
+    </select>
+  </label>
+  <label class="field"><span>Direction</span>
+    <select id="mode">
+      <option value="up">Up</option>
+      <option value="nearest">Nearest</option>
+      <option value="down">Down</option>
+    </select>
+  </label>
+  <label class="field"><span>Apply rounding to</span>
+    <select id="scope">
+      <option value="project-day">Project per day</option>
+      <option value="cell">Each task per day</option>
+    </select>
+  </label>
+  <label class="field"><span>Show as</span>
+    <select id="fmt">
+      <option value="decimal">Decimal hours</option>
+      <option value="hm">h:mm</option>
+    </select>
+  </label>
+  <label class="field"><span>Decimal mark</span>
+    <select id="decimal">
+      <option value=",">Comma (1,50)</option>
+      <option value=".">Point (1.50)</option>
+    </select>
+  </label>
+  <div class="field"><span>Data</span>
+    <div class="group">
+      <button id="refresh">Refresh</button>
+      <button id="copy" title="Tab-separated, pastes straight into Excel">Copy</button>
+      <button id="csv">CSV</button>
+    </div>
+  </div>
+</div>
+
+<div class="wrap"><div id="sheet"></div></div>
+<p class="note" id="note"></p>
+<div class="status" id="status" role="status" aria-live="polite"></div>
+
+<script src="./timesheet-core.js"></script>
+<script>
+(function () {
+  'use strict';
+  const C = window.TimesheetCore;
+  const api = window.PluginAPI || null;
+  const $ = (id) => document.getElementById(id);
+  const DAY = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+  const DEFAULTS = { preset: 'week', stepMinutes: 60, mode: 'up', scope: 'project-day', fmt: 'decimal', decimal: ',' };
+  let settings = { ...DEFAULTS };
+  let range = C.weekRange(new Date());
+  let data = { tasks: [], projects: [] };
+  let sheet = null;
+
+  const status = (msg) => { $('status').textContent = msg || ''; };
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+  // ---------- settings (synced through Super Productivity) ----------
+  async function loadSettings() {
+    if (!api || !api.loadSyncedData) return;
+    try {
+      const raw = await api.loadSyncedData();
+      if (raw) settings = { ...DEFAULTS, ...JSON.parse(raw) };
+    } catch (e) { console.warn('[SP-Timesheets] could not load settings', e); }
+  }
+  async function saveSettings() {
+    if (!api || !api.persistDataSynced) return;
+    try { await api.persistDataSynced(JSON.stringify(settings)); }
+    catch (e) { console.warn('[SP-Timesheets] could not save settings', e); }
+  }
+
+  // ---------- data ----------
+  async function loadData() {
+    if (!api) { data = demoData(); status('Preview mode: demo data (PluginAPI not found).'); return; }
+    status('Loading…');
+    const [active, archived, projects] = await Promise.all([
+      api.getTasks(),
+      api.getArchivedTasks ? api.getArchivedTasks().catch(() => []) : Promise.resolve([]),
+      api.getAllProjects(),
+    ]);
+    data = { tasks: [...(active || []), ...(archived || [])], projects: projects || [] };
+    status(`Loaded ${data.tasks.length} tasks and ${data.projects.length} projects.`);
+  }
+
+  // ---------- range ----------
+  function shift(dir) {
+    const from = C.fromDayKey(range.from);
+    if (settings.preset === 'month') {
+      range = C.monthRange(new Date(from.getFullYear(), from.getMonth() + dir, 1));
+    } else {
+      const len = C.dayKeys(range.from, range.to).length;
+      const step = settings.preset === 'week' ? 7 : len;
+      const a = new Date(from); a.setDate(a.getDate() + dir * step);
+      const b = new Date(a); b.setDate(b.getDate() + len - 1);
+      range = { from: C.toDayKey(a), to: C.toDayKey(b) };
+    }
+    render();
+  }
+  function resetToToday() {
+    range = settings.preset === 'month' ? C.monthRange(new Date()) : C.weekRange(new Date());
+    render();
+  }
+
+  // ---------- render ----------
+  function fmt(ms) {
+    return settings.fmt === 'hm' ? C.formatHM(ms) : C.formatHours(ms, settings.decimal);
+  }
+
+  function render() {
+    $('from').value = range.from; $('to').value = range.to;
+    $('preset').value = settings.preset; $('step').value = String(settings.stepMinutes);
+    $('mode').value = settings.mode; $('scope').value = settings.scope;
+    $('fmt').value = settings.fmt; $('decimal').value = settings.decimal;
+    $('decimal').disabled = settings.fmt === 'hm';
+
+    sheet = C.buildTimesheet(data.tasks, data.projects, range,
+      { stepMinutes: Number(settings.stepMinutes), mode: settings.mode, scope: settings.scope });
+
+    const todayKey = C.toDayKey(new Date());
+    const dayCls = (d) => {
+      const wd = C.fromDayKey(d).getDay();
+      return [wd === 0 || wd === 6 ? 'weekend' : '', d === todayKey ? 'today' : ''].join(' ').trim();
+    };
+
+    if (!sheet.projects.length) {
+      $('sheet').innerHTML = `<div class="empty">No time tracked between ${range.from} and ${range.to}.</div>`;
+      $('note').textContent = '';
+      return;
+    }
+
+    const exact = settings.scope === 'project-day' && Number(settings.stepMinutes) > 0;
+    let h = '<table><thead><tr><th scope="col">Project / task</th>';
+    for (const d of sheet.days) {
+      const dt = C.fromDayKey(d);
+      h += `<th scope="col" class="${dayCls(d)}"><span class="day-name">${DAY[dt.getDay()]}</span>${dt.getDate()}/${dt.getMonth() + 1}</th>`;
+    }
+    h += '<th scope="col" class="total">Total</th></tr></thead><tbody>';
+
+    for (const p of sheet.projects) {
+      h += `<tr class="project"><td>${esc(p.title)}</td>`;
+      for (const d of sheet.days) h += `<td class="${dayCls(d)}">${fmt(p.subtotal[d])}</td>`;
+      h += `<td class="total">${fmt(p.total)}</td></tr>`;
+      for (const r of p.rows) {
+        const c = exact ? 'exact ' : '';
+        h += `<tr class="task${r.isDone ? ' done' : ''}"><td>${esc(r.title)}</td>`;
+        for (const d of sheet.days) h += `<td class="${c}${dayCls(d)}">${fmt(r.cells[d])}</td>`;
+        h += `<td class="${c}total">${fmt(r.total)}</td></tr>`;
+      }
+    }
+    h += '<tr class="grand"><td>Total</td>';
+    for (const d of sheet.days) h += `<td class="${dayCls(d)}">${fmt(sheet.dayTotals[d])}</td>`;
+    h += `<td class="total">${fmt(sheet.grandTotal)}</td></tr></tbody></table>`;
+    $('sheet').innerHTML = h;
+
+    $('note').textContent = Number(settings.stepMinutes) === 0
+      ? 'Exact tracked time, no rounding.'
+      : exact
+        ? `Project rows are rounded ${settings.mode} to ${settings.stepMinutes} min per day; task rows (grey) show exact time and do not add up to the rounded totals.`
+        : `Every task × day cell is rounded ${settings.mode} to ${settings.stepMinutes} min; subtotals are sums of rounded cells.`;
+  }
+
+  // ---------- export ----------
+  async function copy() {
+    if (!sheet) return;
+    const text = C.toDelimited(sheet, { sep: '\t', decimal: settings.decimal });
+    try { await navigator.clipboard.writeText(text); status('Copied. Paste into Excel or Sheets.'); }
+    catch (e) {
+      const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta);
+      ta.select(); const ok = document.execCommand('copy'); ta.remove();
+      status(ok ? 'Copied. Paste into Excel or Sheets.' : 'Could not copy to the clipboard.');
+    }
+  }
+  function downloadCsv() {
+    if (!sheet) return;
+    const text = '﻿' + C.toDelimited(sheet, { sep: ';', decimal: settings.decimal }); // BOM so Excel reads UTF-8
+    const url = URL.createObjectURL(new Blob([text], { type: 'text/csv;charset=utf-8' }));
+    const a = document.createElement('a');
+    a.href = url; a.download = `timesheet_${range.from}_${range.to}.csv`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    status(`Saved timesheet_${range.from}_${range.to}.csv`);
+  }
+
+  // ---------- wiring ----------
+  function onSetting(id, key, cast = (v) => v) {
+    $(id).addEventListener('change', (e) => { settings[key] = cast(e.target.value); saveSettings(); render(); });
+  }
+  onSetting('step', 'stepMinutes', Number);
+  onSetting('mode', 'mode');
+  onSetting('scope', 'scope');
+  onSetting('fmt', 'fmt');
+  onSetting('decimal', 'decimal');
+  $('preset').addEventListener('change', (e) => {
+    settings.preset = e.target.value; saveSettings();
+    if (settings.preset !== 'custom') resetToToday(); else render();
+  });
+  const onDate = () => {
+    const f = $('from').value, t = $('to').value;
+    if (!f || !t) return;
+    range = f <= t ? { from: f, to: t } : { from: t, to: f };
+    settings.preset = 'custom'; saveSettings(); render();
+  };
+  $('from').addEventListener('change', onDate);
+  $('to').addEventListener('change', onDate);
+  $('prev').addEventListener('click', () => shift(-1));
+  $('next').addEventListener('click', () => shift(1));
+  $('today').addEventListener('click', resetToToday);
+  $('refresh').addEventListener('click', async () => { await loadData(); render(); });
+  $('copy').addEventListener('click', copy);
+  $('csv').addEventListener('click', downloadCsv);
+
+  // ---------- demo data for standalone preview ----------
+  function demoData() {
+    const w = C.weekRange(new Date());
+    const d = C.dayKeys(w.from, w.to);
+    const m = 60000;
+    return {
+      projects: [{ id: 'p1', title: 'White — UKS Saarland' }, { id: 'p2', title: 'Freelance — no-no.space' }],
+      tasks: [
+        { id: 't1', title: 'Clash detection', projectId: 'p1', subTaskIds: [], timeSpentOnDay: { [d[0]]: 20 * m, [d[1]]: 95 * m } },
+        { id: 't2', title: 'IFC export', projectId: 'p1', subTaskIds: [], timeSpentOnDay: { [d[0]]: 20 * m, [d[2]]: 3 * 60 * m } },
+        { id: 't3', title: 'Coordination meeting', projectId: 'p1', subTaskIds: [], isDone: true, timeSpentOnDay: { [d[0]]: 20 * m } },
+        { id: 't4', title: 'Website', projectId: 'p2', subTaskIds: ['t5'], timeSpentOnDay: { [d[3]]: 50 * m } },
+        { id: 't5', title: 'Fonts', projectId: 'p2', parentId: 't4', subTaskIds: [], timeSpentOnDay: { [d[3]]: 50 * m } },
+      ],
+    };
+  }
+
+  (async function init() {
+    await loadSettings();
+    if (settings.preset === 'month') range = C.monthRange(new Date());
+    try { await loadData(); } catch (e) { console.error(e); status('Could not load tasks: ' + (e && e.message || e)); }
+    render();
+  })();
+})();
+</script>
+</body>
+</html>
