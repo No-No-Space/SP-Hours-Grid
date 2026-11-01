@@ -2,7 +2,9 @@
 
 All notable changes to this plugin. Versions follow the `version` in `src/manifest.json`.
 
-## 0.2.1 — 2026-11-01
+## 0.2.2 — 2026-11-01
+
+First version submitted to the community list. (0.2.1 was tagged but never released.)
 
 - `minSupVersion` set to 19.3.1, the version it has been tested on.
 - README and tests use generic example names.
