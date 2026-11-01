@@ -8,6 +8,8 @@ A [Super Productivity](https://super-productivity.com) plugin that shows tracked
 
 It reads the per-day time Super Productivity already records on every task (`timeSpentOnDay`), so nothing extra has to be tracked.
 
+![Timesheets: projects with daily subtotals, tasks below, days in columns, rounded to the hour](docs/screenshot.png)
+
 ## Features
 
 - Week, month or custom date range; previous / next / today navigation. Weeks start on Monday.
@@ -32,9 +34,15 @@ It reads the per-day time Super Productivity already records on every task (`tim
 
 ## Install
 
-1. `npm run build` (Node 18+, no dependencies).
-2. In Super Productivity: **Settings → Plugins → upload** `dist/sp-timesheets-<version>.zip`.
-3. Open **Timesheets** from the plugin menu.
+- **From the app** (once listed): **Settings → Plugins → Community Plugins → Timesheets → Install**.
+- **By hand**: download `sp-timesheets-<version>.zip` from [Releases](https://github.com/No-No-Space/SP-Timesheets/releases) and upload it under **Settings → Plugins**.
+- **From source**: `npm run build` (Node 18+, no dependencies) and upload `dist/sp-timesheets-<version>.zip`.
+
+Then open **Timesheets** from the plugin menu.
+
+## Privacy and permissions
+
+The plugin is a single `index.html` running in Super Productivity's plugin iframe. It has no `plugin.js`, makes no network requests and does not use `nodeExecution`. It reads tasks (active and archived), projects and tags, and stores only its own settings with `persistDataSynced`. It never writes to your tasks.
 
 ## Develop
 
@@ -45,11 +53,14 @@ src/
   timesheet-core.js    pure calculation functions — aggregation, rounding, export
   icon.svg
 test/core.test.js      node:test unit tests for the core
-scripts/build.mjs      inlines the core and writes dist/plugin/ and the ZIP
+test/manifest.test.js  manifest checks the community listing relies on
+scripts/build.mjs      inlines the core, writes dist/plugin/, the ZIP and its .sha256
+scripts/listing-entry.mjs  prints the community-plugins.json entry
 ```
 
 - `npm test` runs the unit tests.
 - Opening `src/index.html` in a browser shows a preview with demo data (no `PluginAPI` present).
+- Releases and the community listing: see [RELEASING.md](RELEASING.md). Changes: [CHANGELOG.md](CHANGELOG.md).
 - Plugin API reference: [plugin-development.md](https://github.com/johannesjo/super-productivity/blob/master/docs/plugin-development.md).
 
 ## Roadmap
@@ -57,6 +68,10 @@ scripts/build.mjs      inlines the core and writes dist/plugin/ and the ZIP
 - Confirm the default rounding rule for White Arkitekter (project per day vs per entry).
 - Filter by project; hide empty weekends.
 - Optional Caribe theme for Super Productivity as a whole (the plugin inherits it automatically).
+
+## Contributing
+
+Issues and pull requests are welcome. Run `npm test` before opening a PR; the calculation logic lives in `src/timesheet-core.js` and should stay free of DOM and `PluginAPI` calls so it can be tested in Node.
 
 ## License
 

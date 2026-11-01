@@ -4,10 +4,25 @@
   "description": "Super Productivity plugin: timesheet table of tasks × days, grouped by project, with configurable rounding.",
   "private": true,
   "license": "MIT",
+  "author": {
+    "name": "Aksel Alvarez Jurgueson",
+    "url": "https://github.com/No-No-Space"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/No-No-Space/SP-Timesheets.git"
+  },
+  "homepage": "https://github.com/No-No-Space/SP-Timesheets#readme",
+  "bugs": {
+    "url": "https://github.com/No-No-Space/SP-Timesheets/issues"
+  },
   "type": "commonjs",
   "scripts": {
     "build": "node scripts/build.mjs",
-    "test": "node --test \"test/*.test.js\""
+    "test": "node --test \"test/*.test.js\"",
+    "listing": "node scripts/listing-entry.mjs"
   },
-  "engines": { "node": ">=18" }
+  "engines": {
+    "node": ">=18"
+  }
 }

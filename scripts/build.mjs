@@ -6,6 +6,7 @@ import { readFileSync, writeFileSync, mkdirSync, rmSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { deflateRawSync } from 'node:zlib';
+import { createHash } from 'node:crypto';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const src = join(root, 'src');
@@ -42,9 +43,10 @@ const crc32 = (buf) => {
 function zip(entries) {
   const locals = [], centrals = [];
   let offset = 0;
-  const now = new Date();
-  const dosTime = (now.getHours() << 11) | (now.getMinutes() << 5) | (now.getSeconds() >> 1);
-  const dosDate = ((now.getFullYear() - 1980) << 9) | ((now.getMonth() + 1) << 5) | now.getDate();
+  // Fixed timestamp (2026-01-01 00:00) so the same sources always give the same bytes —
+  // the community listing pins the ZIP by SHA-256, so a local build can be checked against CI.
+  const dosTime = 0;
+  const dosDate = ((2026 - 1980) << 9) | (1 << 5) | 1;
   for (const [name, body] of Object.entries(entries)) {
     const data = Buffer.from(body, 'utf8');
     const comp = deflateRawSync(data);
@@ -74,5 +76,9 @@ function zip(entries) {
 }
 
 const zipName = `sp-timesheets-${manifest.version}.zip`;
-writeFileSync(join(dist, zipName), zip(files));
+const zipBuf = zip(files);
+const sha256 = createHash('sha256').update(zipBuf).digest('hex');
+writeFileSync(join(dist, zipName), zipBuf);
+writeFileSync(join(dist, `${zipName}.sha256`), `${sha256}  ${zipName}\n`);
 console.log(`Built dist/${zipName} (${Object.keys(files).join(', ')})`);
+console.log(`sha256 ${sha256}`);

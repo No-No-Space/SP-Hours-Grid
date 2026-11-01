@@ -7,7 +7,7 @@ const MIN = 60 * 1000;
 const H = 60 * MIN;
 
 const projects = [
-  { id: 'p1', title: 'White — UKS' },
+  { id: 'p1', title: 'Office — Hospital' },
   { id: 'p2', title: 'Freelance' },
 ];
 
@@ -103,7 +103,7 @@ test('delimited export has header, rows, subtotals and total', () => {
   const s = C.buildTimesheet(tasks, projects, range, { stepMinutes: 60, mode: 'up' });
   const lines = C.toDelimited(s).split('\r\n');
   assert.equal(lines[0].split(';').length, 3 + 7 + 1);
-  assert.ok(lines.some((l) => l.startsWith('White — UKS;Subtotal;')));
+  assert.ok(lines.some((l) => l.startsWith('Office — Hospital;Subtotal;')));
   assert.ok(lines[lines.length - 1].startsWith('Total;'));
 });
 
@@ -133,5 +133,5 @@ test('the Today tag is neither a filter nor shown on rows', () => {
 test('export has a Tags column with titles', () => {
   const s = C.buildTimesheet(tasks, projects, range, {}, { tagIds: ['white'] });
   const lines = C.toDelimited(s, { tagTitles: { white: 'White' } }).split('\r\n');
-  assert.ok(lines.some((l) => l.startsWith('White — UKS;Clash check;White;')));
+  assert.ok(lines.some((l) => l.startsWith('Office — Hospital;Clash check;White;')));
 });
