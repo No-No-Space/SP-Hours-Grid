@@ -4,7 +4,7 @@
   "version": "0.2.0",
   "description": "Timesheet table: tasks grouped by project in rows, days in columns, with tag filter, configurable rounding and CSV export.",
   "manifestVersion": 1,
-  "minSupVersion": "14.0.2",
+  "minSupVersion": "19.3.1",
   "icon": "icon.svg",
   "iFrame": true,
   "sidePanel": false,
