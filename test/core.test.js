@@ -11,13 +11,14 @@ const projects = [
   { id: 'p2', title: 'Freelance' },
 ];
 
+// Tags: a = White, b = White + Today, c = untagged; parent 'parent' = NoNoSpace (subtask inherits).
 // Three 20-minute tasks on the same day in one project: the case that shows why scope matters.
 const tasks = [
-  { id: 'a', title: 'Clash check', projectId: 'p1', subTaskIds: [], timeSpentOnDay: { '2026-11-02': 20 * MIN } },
-  { id: 'b', title: 'IFC export', projectId: 'p1', subTaskIds: [], timeSpentOnDay: { '2026-11-02': 20 * MIN } },
+  { id: 'a', title: 'Clash check', projectId: 'p1', tagIds: ['white'], subTaskIds: [], timeSpentOnDay: { '2026-11-02': 20 * MIN } },
+  { id: 'b', title: 'IFC export', projectId: 'p1', tagIds: ['white', 'TODAY'], subTaskIds: [], timeSpentOnDay: { '2026-11-02': 20 * MIN } },
   { id: 'c', title: 'Model QA', projectId: 'p1', subTaskIds: [], timeSpentOnDay: { '2026-11-02': 20 * MIN, '2026-11-03': 70 * MIN } },
   // Parent with a subtask: only the subtask may be counted.
-  { id: 'parent', title: 'Website', projectId: 'p2', subTaskIds: ['sub'], timeSpentOnDay: { '2026-11-02': 45 * MIN } },
+  { id: 'parent', title: 'Website', projectId: 'p2', tagIds: ['nns'], subTaskIds: ['sub'], timeSpentOnDay: { '2026-11-02': 45 * MIN } },
   { id: 'sub', title: 'Fonts', projectId: 'p2', parentId: 'parent', subTaskIds: [], timeSpentOnDay: { '2026-11-02': 45 * MIN } },
   // Outside the range: must not appear.
   { id: 'old', title: 'Old', projectId: 'p2', subTaskIds: [], timeSpentOnDay: { '2026-10-01': 2 * H } },
@@ -101,7 +102,36 @@ test('formatting', () => {
 test('delimited export has header, rows, subtotals and total', () => {
   const s = C.buildTimesheet(tasks, projects, range, { stepMinutes: 60, mode: 'up' });
   const lines = C.toDelimited(s).split('\r\n');
-  assert.equal(lines[0].split(';').length, 2 + 7 + 1);
+  assert.equal(lines[0].split(';').length, 3 + 7 + 1);
   assert.ok(lines.some((l) => l.startsWith('White — UKS;Subtotal;')));
   assert.ok(lines[lines.length - 1].startsWith('Total;'));
+});
+
+test('tag filter keeps tasks with any selected tag, inheriting parent tags', () => {
+  const white = C.buildTimesheet(tasks, projects, range, {}, { tagIds: ['white'] });
+  assert.deepEqual(white.projects.flatMap((p) => p.rows.map((r) => r.taskId)).sort(), ['a', 'b']);
+  const nns = C.buildTimesheet(tasks, projects, range, {}, { tagIds: ['nns'] });
+  assert.deepEqual(nns.projects.flatMap((p) => p.rows.map((r) => r.taskId)), ['sub']);
+  const both = C.buildTimesheet(tasks, projects, range, {}, { tagIds: ['white', 'nns'] });
+  assert.equal(both.projects.flatMap((p) => p.rows).length, 3);
+});
+
+test('rounding applies to the filtered set only', () => {
+  // White on 2 Nov: a + b = 40 min → 1 h; untagged c is excluded.
+  const s = C.buildTimesheet(tasks, projects, range, { stepMinutes: 60, mode: 'up' }, { tagIds: ['white'] });
+  assert.equal(s.projects.find((p) => p.id === 'p1').subtotal['2026-11-02'], H);
+  assert.equal(s.grandTotal, H);
+});
+
+test('the Today tag is neither a filter nor shown on rows', () => {
+  const onlyToday = C.buildTimesheet(tasks, projects, range, {}, { tagIds: ['TODAY'] });
+  assert.equal(onlyToday.projects.flatMap((p) => p.rows).length, 5); // treated as no filter
+  const row = onlyToday.projects.flatMap((p) => p.rows).find((r) => r.taskId === 'b');
+  assert.deepEqual(row.tagIds, ['white']);
+});
+
+test('export has a Tags column with titles', () => {
+  const s = C.buildTimesheet(tasks, projects, range, {}, { tagIds: ['white'] });
+  const lines = C.toDelimited(s, { tagTitles: { white: 'White' } }).split('\r\n');
+  assert.ok(lines.some((l) => l.startsWith('White — UKS;Clash check;White;')));
 });

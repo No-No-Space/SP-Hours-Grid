@@ -8,6 +8,8 @@
 
   const MS_PER_MIN = 60 * 1000;
   const NO_PROJECT_ID = '__no_project__';
+  /** Super Productivity's built-in "Today" tag is a planning list, not a category; never offered as a filter. */
+  const SYSTEM_TAG_IDS = new Set(['TODAY']);
 
   /** Local-time YYYY-MM-DD, the same key format Super Productivity uses in timeSpentOnDay. */
   function toDayKey(date) {
@@ -74,10 +76,14 @@
    *   scope 'project-day' — task rows stay exact; each project's daily total is rounded.
    *   scope 'cell'        — every task × day cell is rounded; subtotals are sums of rounded cells.
    *
+   * filter:   { tagIds: [] } — keep only tasks carrying at least one of these tags
+   *           (own tags or the parent's, since subtasks often are not tagged themselves).
+   *           Empty or missing = no filter.
+   *
    * Only leaf tasks are counted. In Super Productivity a parent task's time is the
    * sum of its subtasks, so counting both would double the hours.
    */
-  function buildTimesheet(tasks, projects, range, rounding = {}) {
+  function buildTimesheet(tasks, projects, range, rounding = {}, filter = {}) {
     const { stepMinutes = 0, mode = 'up', scope = 'project-day' } = rounding;
     const days = dayKeys(range.from, range.to);
     const daySet = new Set(days);
@@ -85,6 +91,7 @@
     const byId = new Map();
     for (const t of tasks || []) if (t && t.id && !byId.has(t.id)) byId.set(t.id, t);
 
+    const wanted = new Set((filter.tagIds || []).filter((id) => !SYSTEM_TAG_IDS.has(id)));
     const projectTitle = new Map((projects || []).map((p) => [p.id, p.title]));
     const groups = new Map();
 
@@ -102,6 +109,10 @@
       if (!any) continue;
 
       const parent = t.parentId ? byId.get(t.parentId) : null;
+      const tagIds = [...new Set([...(t.tagIds || []), ...((parent && parent.tagIds) || [])])].filter(
+        (id) => !SYSTEM_TAG_IDS.has(id)
+      );
+      if (wanted.size && !tagIds.some((id) => wanted.has(id))) continue;
       const projectId = t.projectId || (parent && parent.projectId) || NO_PROJECT_ID;
       const title = parent ? `${parent.title} › ${t.title}` : t.title;
 
@@ -112,7 +123,7 @@
           rows: [],
         });
       }
-      groups.get(projectId).rows.push({ taskId: t.id, title, isDone: !!t.isDone, rawCells: cells });
+      groups.get(projectId).rows.push({ taskId: t.id, title, tagIds, isDone: !!t.isDone, rawCells: cells });
     }
 
     const dayTotals = Object.fromEntries(days.map((d) => [d, 0]));
@@ -146,7 +157,7 @@
 
     out.sort((a, b) => a.title.localeCompare(b.title));
     const grandTotal = days.reduce((s, d) => s + dayTotals[d], 0);
-    return { days, projects: out, dayTotals, grandTotal, rounding: { stepMinutes, mode, scope } };
+    return { days, projects: out, dayTotals, grandTotal, rounding: { stepMinutes, mode, scope }, filter: { tagIds: [...wanted] } };
   }
 
   /** Decimal hours, e.g. 5400000 → "1.50" (or "1,50"). Empty string for zero. */
@@ -172,22 +183,24 @@
    * Delimited text export. Defaults suit Swedish Excel: ';' separator, ',' decimal.
    * Use sep '\t' for clipboard pasting into a spreadsheet.
    */
-  function toDelimited(sheet, { sep = ';', decimal = ',' } = {}) {
+  function toDelimited(sheet, { sep = ';', decimal = ',', tagTitles = {} } = {}) {
     const f = (ms) => formatHours(ms, decimal, false);
+    const tags = (ids) => (ids || []).map((id) => tagTitles[id] || id).join(', ');
     const lines = [];
-    lines.push(['Project', 'Task', ...sheet.days, 'Total'].map((v) => csvEscape(v, sep)).join(sep));
+    lines.push(['Project', 'Task', 'Tags', ...sheet.days, 'Total'].map((v) => csvEscape(v, sep)).join(sep));
     for (const p of sheet.projects) {
       for (const r of p.rows) {
-        lines.push([p.title, r.title, ...sheet.days.map((d) => f(r.cells[d])), f(r.total)].map((v) => csvEscape(v, sep)).join(sep));
+        lines.push([p.title, r.title, tags(r.tagIds), ...sheet.days.map((d) => f(r.cells[d])), f(r.total)].map((v) => csvEscape(v, sep)).join(sep));
       }
-      lines.push([p.title, 'Subtotal', ...sheet.days.map((d) => f(p.subtotal[d])), f(p.total)].map((v) => csvEscape(v, sep)).join(sep));
+      lines.push([p.title, 'Subtotal', '', ...sheet.days.map((d) => f(p.subtotal[d])), f(p.total)].map((v) => csvEscape(v, sep)).join(sep));
     }
-    lines.push(['Total', '', ...sheet.days.map((d) => f(sheet.dayTotals[d])), f(sheet.grandTotal)].map((v) => csvEscape(v, sep)).join(sep));
+    lines.push(['Total', '', '', ...sheet.days.map((d) => f(sheet.dayTotals[d])), f(sheet.grandTotal)].map((v) => csvEscape(v, sep)).join(sep));
     return lines.join('\r\n');
   }
 
   const api = {
     NO_PROJECT_ID,
+    SYSTEM_TAG_IDS,
     toDayKey,
     fromDayKey,
     dayKeys,

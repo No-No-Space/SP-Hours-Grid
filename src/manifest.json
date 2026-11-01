@@ -1,13 +1,13 @@
 {
   "id": "sp-timesheets",
   "name": "Timesheets",
-  "version": "0.1.0",
-  "description": "Timesheet table: tasks grouped by project in rows, days in columns, with configurable rounding and CSV export.",
+  "version": "0.2.0",
+  "description": "Timesheet table: tasks grouped by project in rows, days in columns, with tag filter, configurable rounding and CSV export.",
   "manifestVersion": 1,
   "minSupVersion": "14.0.2",
   "icon": "icon.svg",
   "iFrame": true,
   "sidePanel": false,
-  "permissions": ["getTasks", "getArchivedTasks", "getAllProjects", "persistDataSynced", "loadSyncedData"],
+  "permissions": ["getTasks", "getArchivedTasks", "getAllProjects", "getAllTags", "persistDataSynced", "loadSyncedData"],
   "hooks": []
 }

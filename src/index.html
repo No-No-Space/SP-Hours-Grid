@@ -48,6 +48,14 @@
   .day-name { display: block; font-size: 11px; font-weight: 400; color: var(--ts-muted); }
   .note { margin-top: var(--ts-gap); font-size: 12px; color: var(--ts-muted); }
   .empty { padding: calc(var(--ts-gap) * 3); text-align: center; color: var(--ts-muted); }
+  .chips { display: flex; flex-wrap: wrap; gap: 4px; }
+  .chip { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border: 1px solid var(--ts-line);
+          border-radius: 999px; background: var(--ts-card); cursor: pointer; user-select: none; }
+  .chip input { position: absolute; opacity: 0; pointer-events: none; }
+  .chip .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--dot, var(--ts-muted)); }
+  .chip:has(input:checked) { border-color: var(--ts-accent); background: var(--ts-sub); font-weight: 600; }
+  .chip:has(input:focus-visible) { outline: 2px solid var(--ts-accent); outline-offset: 1px; }
+  .row-tags { margin-left: 6px; font-size: 11px; color: var(--ts-muted); }
   .status { min-height: 1.4em; font-size: 12px; color: var(--ts-muted); margin-top: var(--ts-gap); }
 </style>
 </head>
@@ -111,6 +119,10 @@
   </div>
 </div>
 
+<div class="field" style="margin-bottom: calc(var(--ts-gap) * 2)"><span>Tags <small>(none selected = all tasks)</small></span>
+  <div class="chips" id="tags" role="group" aria-label="Filter by tag"></div>
+</div>
+
 <div class="wrap"><div id="sheet"></div></div>
 <p class="note" id="note"></p>
 <div class="status" id="status" role="status" aria-live="polite"></div>
@@ -124,10 +136,10 @@
   const $ = (id) => document.getElementById(id);
   const DAY = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-  const DEFAULTS = { preset: 'week', stepMinutes: 60, mode: 'up', scope: 'project-day', fmt: 'decimal', decimal: ',' };
+  const DEFAULTS = { preset: 'week', stepMinutes: 60, mode: 'up', scope: 'project-day', fmt: 'decimal', decimal: ',', tagIds: [] };
   let settings = { ...DEFAULTS };
   let range = C.weekRange(new Date());
-  let data = { tasks: [], projects: [] };
+  let data = { tasks: [], projects: [], tags: [] };
   let sheet = null;
 
   const status = (msg) => { $('status').textContent = msg || ''; };
@@ -151,13 +163,21 @@
   async function loadData() {
     if (!api) { data = demoData(); status('Preview mode: demo data (PluginAPI not found).'); return; }
     status('Loading…');
-    const [active, archived, projects] = await Promise.all([
+    const [active, archived, projects, tags] = await Promise.all([
       api.getTasks(),
       api.getArchivedTasks ? api.getArchivedTasks().catch(() => []) : Promise.resolve([]),
       api.getAllProjects(),
+      api.getAllTags ? api.getAllTags().catch(() => []) : Promise.resolve([]),
     ]);
-    data = { tasks: [...(active || []), ...(archived || [])], projects: projects || [] };
-    status(`Loaded ${data.tasks.length} tasks and ${data.projects.length} projects.`);
+    data = {
+      tasks: [...(active || []), ...(archived || [])],
+      projects: projects || [],
+      tags: (tags || []).filter((t) => !C.SYSTEM_TAG_IDS.has(t.id)),
+    };
+    // Forget selected tags that no longer exist.
+    const known = new Set(data.tags.map((t) => t.id));
+    settings.tagIds = (settings.tagIds || []).filter((id) => known.has(id));
+    status(`Loaded ${data.tasks.length} tasks, ${data.projects.length} projects and ${data.tags.length} tags.`);
   }
 
   // ---------- range ----------
@@ -191,8 +211,10 @@
     $('fmt').value = settings.fmt; $('decimal').value = settings.decimal;
     $('decimal').disabled = settings.fmt === 'hm';
 
+    renderTagChips();
     sheet = C.buildTimesheet(data.tasks, data.projects, range,
-      { stepMinutes: Number(settings.stepMinutes), mode: settings.mode, scope: settings.scope });
+      { stepMinutes: Number(settings.stepMinutes), mode: settings.mode, scope: settings.scope },
+      { tagIds: settings.tagIds });
 
     const todayKey = C.toDayKey(new Date());
     const dayCls = (d) => {
@@ -201,7 +223,8 @@
     };
 
     if (!sheet.projects.length) {
-      $('sheet').innerHTML = `<div class="empty">No time tracked between ${range.from} and ${range.to}.</div>`;
+      const which = settings.tagIds.length ? ` for ${selectedTagTitles().join(', ')}` : '';
+      $('sheet').innerHTML = `<div class="empty">No time tracked${esc(which)} between ${range.from} and ${range.to}.</div>`;
       $('note').textContent = '';
       return;
     }
@@ -220,7 +243,8 @@
       h += `<td class="total">${fmt(p.total)}</td></tr>`;
       for (const r of p.rows) {
         const c = exact ? 'exact ' : '';
-        h += `<tr class="task${r.isDone ? ' done' : ''}"><td>${esc(r.title)}</td>`;
+        const tl = r.tagIds.map((id) => tagTitle(id)).filter(Boolean).join(', ');
+        h += `<tr class="task${r.isDone ? ' done' : ''}"><td>${esc(r.title)}${tl ? `<span class="row-tags">${esc(tl)}</span>` : ''}</td>`;
         for (const d of sheet.days) h += `<td class="${c}${dayCls(d)}">${fmt(r.cells[d])}</td>`;
         h += `<td class="${c}total">${fmt(r.total)}</td></tr>`;
       }
@@ -230,17 +254,42 @@
     h += `<td class="total">${fmt(sheet.grandTotal)}</td></tr></tbody></table>`;
     $('sheet').innerHTML = h;
 
-    $('note').textContent = Number(settings.stepMinutes) === 0
+    const filterNote = settings.tagIds.length ? `Filtered by ${selectedTagTitles().join(' or ')}. ` : '';
+    $('note').textContent = filterNote + (Number(settings.stepMinutes) === 0
       ? 'Exact tracked time, no rounding.'
       : exact
         ? `Project rows are rounded ${settings.mode} to ${settings.stepMinutes} min per day; task rows (grey) show exact time and do not add up to the rounded totals.`
-        : `Every task × day cell is rounded ${settings.mode} to ${settings.stepMinutes} min; subtotals are sums of rounded cells.`;
+        : `Every task × day cell is rounded ${settings.mode} to ${settings.stepMinutes} min; subtotals are sums of rounded cells.`);
+  }
+
+  // ---------- tags ----------
+  function tagTitle(id) { const t = data.tags.find((x) => x.id === id); return t ? t.title : ''; }
+  function selectedTagTitles() { return settings.tagIds.map(tagTitle).filter(Boolean); }
+  function tagTitleMap() { return Object.fromEntries(data.tags.map((t) => [t.id, t.title])); }
+  function renderTagChips() {
+    const box = $('tags');
+    if (!data.tags.length) { box.innerHTML = '<span class="row-tags">No tags yet.</span>'; return; }
+    const sel = new Set(settings.tagIds);
+    box.innerHTML = data.tags.map((t) => {
+      const color = t.color || (t.theme && t.theme.primary) || '';
+      return `<label class="chip"${color ? ` style="--dot:${esc(color)}"` : ''}>` +
+        `<input type="checkbox" value="${esc(t.id)}"${sel.has(t.id) ? ' checked' : ''}><span class="dot"></span>${esc(t.title)}</label>`;
+    }).join('');
+  }
+  $('tags').addEventListener('change', (e) => {
+    if (!e.target.matches('input[type=checkbox]')) return;
+    settings.tagIds = [...$('tags').querySelectorAll('input:checked')].map((i) => i.value);
+    saveSettings(); render();
+  });
+  function fileSuffix() {
+    const t = selectedTagTitles().map((x) => x.replace(/[^\w-]+/g, '')).filter(Boolean);
+    return t.length ? `_${t.join('-')}` : '';
   }
 
   // ---------- export ----------
   async function copy() {
     if (!sheet) return;
-    const text = C.toDelimited(sheet, { sep: '\t', decimal: settings.decimal });
+    const text = C.toDelimited(sheet, { sep: '\t', decimal: settings.decimal, tagTitles: tagTitleMap() });
     try { await navigator.clipboard.writeText(text); status('Copied. Paste into Excel or Sheets.'); }
     catch (e) {
       const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta);
@@ -250,13 +299,14 @@
   }
   function downloadCsv() {
     if (!sheet) return;
-    const text = '﻿' + C.toDelimited(sheet, { sep: ';', decimal: settings.decimal }); // BOM so Excel reads UTF-8
+    const text = '﻿' + C.toDelimited(sheet, { sep: ';', decimal: settings.decimal, tagTitles: tagTitleMap() }); // BOM so Excel reads UTF-8
     const url = URL.createObjectURL(new Blob([text], { type: 'text/csv;charset=utf-8' }));
     const a = document.createElement('a');
-    a.href = url; a.download = `timesheet_${range.from}_${range.to}.csv`;
+    const name = `timesheet_${range.from}_${range.to}${fileSuffix()}.csv`;
+    a.href = url; a.download = name;
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
-    status(`Saved timesheet_${range.from}_${range.to}.csv`);
+    status(`Saved ${name}`);
   }
 
   // ---------- wiring ----------
@@ -294,11 +344,12 @@
     const m = 60000;
     return {
       projects: [{ id: 'p1', title: 'White — UKS Saarland' }, { id: 'p2', title: 'Freelance — no-no.space' }],
+      tags: [{ id: 'w', title: 'White', color: '#607D8B' }, { id: 'n', title: 'NoNoSpace', color: '#1E88E5' }, { id: 'pe', title: 'Personal', color: '#43A047' }],
       tasks: [
-        { id: 't1', title: 'Clash detection', projectId: 'p1', subTaskIds: [], timeSpentOnDay: { [d[0]]: 20 * m, [d[1]]: 95 * m } },
-        { id: 't2', title: 'IFC export', projectId: 'p1', subTaskIds: [], timeSpentOnDay: { [d[0]]: 20 * m, [d[2]]: 3 * 60 * m } },
-        { id: 't3', title: 'Coordination meeting', projectId: 'p1', subTaskIds: [], isDone: true, timeSpentOnDay: { [d[0]]: 20 * m } },
-        { id: 't4', title: 'Website', projectId: 'p2', subTaskIds: ['t5'], timeSpentOnDay: { [d[3]]: 50 * m } },
+        { id: 't1', title: 'Clash detection', projectId: 'p1', tagIds: ['w'], subTaskIds: [], timeSpentOnDay: { [d[0]]: 20 * m, [d[1]]: 95 * m } },
+        { id: 't2', title: 'IFC export', projectId: 'p1', tagIds: ['w'], subTaskIds: [], timeSpentOnDay: { [d[0]]: 20 * m, [d[2]]: 3 * 60 * m } },
+        { id: 't3', title: 'Coordination meeting', projectId: 'p1', tagIds: ['w'], subTaskIds: [], isDone: true, timeSpentOnDay: { [d[0]]: 20 * m } },
+        { id: 't4', title: 'Website', projectId: 'p2', tagIds: ['n'], subTaskIds: ['t5'], timeSpentOnDay: { [d[3]]: 50 * m } },
         { id: 't5', title: 'Fonts', projectId: 'p2', parentId: 't4', subTaskIds: [], timeSpentOnDay: { [d[3]]: 50 * m } },
       ],
     };

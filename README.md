@@ -2,9 +2,9 @@
 
 > Created: 2026-11-01 / by Aksel Alvarez Jurgueson & Claude
 > Last updated: 2026-11-01 / by Claude
-> Version: v0.1
+> Version: v0.2
 
-A [Super Productivity](https://super-productivity.com) plugin that shows tracked time as a timesheet: **tasks grouped by project in rows, days in columns**, with configurable rounding and export to CSV or the clipboard.
+A [Super Productivity](https://super-productivity.com) plugin that shows tracked time as a timesheet: **tasks grouped by project in rows, days in columns**, with a tag filter, configurable rounding and export to CSV or the clipboard.
 
 It reads the per-day time Super Productivity already records on every task (`timeSpentOnDay`), so nothing extra has to be tracked.
 
@@ -12,6 +12,7 @@ It reads the per-day time Super Productivity already records on every task (`tim
 
 - Week, month or custom date range; previous / next / today navigation. Weeks start on Monday.
 - Project subtotal rows, task rows, a total column and a daily total row. Weekends are shaded.
+- **Tag filter**: pick one or more tags (e.g. White, NoNoSpace, Personal) to show only tasks carrying any of them; none selected shows everything. A subtask counts as tagged if its parent is. Tag names appear next to each task and in a *Tags* column in the export, and the CSV filename carries the selected tags.
 - Rounding: none, 15 min, 30 min or 1 hour; up, nearest or down.
 - Rounding scope:
   - **Project per day** (default) — task rows show exact time; each project's daily total is rounded. Three 20-minute tasks on one day bill as 1 h.
@@ -26,7 +27,8 @@ It reads the per-day time Super Productivity already records on every task (`tim
 - Only **leaf tasks** are counted. A parent task's time in Super Productivity is the sum of its subtasks, so counting both would double the hours. Subtasks are shown as `Parent › Subtask`.
 - Active and archived tasks are both read, so past weeks stay complete after tasks are archived.
 - Tasks without a project are grouped under **No project**.
-- Rounding is applied per day, never to the period total.
+- Rounding is applied per day, never to the period total, and only to the tasks left after the tag filter.
+- Super Productivity's built-in *Today* tag is a planning list, so it is never offered as a filter.
 
 ## Install
 
@@ -53,7 +55,7 @@ scripts/build.mjs      inlines the core and writes dist/plugin/ and the ZIP
 ## Roadmap
 
 - Confirm the default rounding rule for White Arkitekter (project per day vs per entry).
-- Filter by project or tag; hide empty weekends.
+- Filter by project; hide empty weekends.
 - Optional Caribe theme for Super Productivity as a whole (the plugin inherits it automatically).
 
 ## License
