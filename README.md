@@ -14,7 +14,7 @@ It reads the per-day time Super Productivity already records on every task (`tim
 
 - Week, month or custom date range; previous / next / today navigation. Weeks start on Monday.
 - Project subtotal rows, task rows, a total column and a daily total row. Weekends are shaded.
-- **Tag filter**: pick one or more tags (e.g. White, NoNoSpace, Personal) to show only tasks carrying any of them; none selected shows everything. A subtask counts as tagged if its parent is. Tag names appear next to each task and in a *Tags* column in the export, and the CSV filename carries the selected tags.
+- **Tag filter**: pick one or more tags (e.g. Office, Freelance, Personal) to show only tasks carrying any of them; none selected shows everything. A subtask counts as tagged if its parent is. Tag names appear next to each task and in a *Tags* column in the export, and the CSV filename carries the selected tags.
 - Rounding: none, 15 min, 30 min or 1 hour; up, nearest or down.
 - Rounding scope:
   - **Project per day** (default) — task rows show exact time; each project's daily total is rounded. Three 20-minute tasks on one day bill as 1 h.
@@ -65,7 +65,7 @@ scripts/listing-entry.mjs  prints the community-plugins.json entry
 
 ## Roadmap
 
-- Confirm the default rounding rule for White Arkitekter (project per day vs per entry).
+- Decide the default rounding scope (project per day vs each task per day).
 - Filter by project; hide empty weekends.
 - Optional Caribe theme for Super Productivity as a whole (the plugin inherits it automatically).
 
