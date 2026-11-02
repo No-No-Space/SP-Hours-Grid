@@ -18,6 +18,7 @@
     --ts-gap: var(--s, 8px);
   }
   * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
   body { margin: 0; padding: calc(var(--ts-gap) * 2); background: var(--ts-bg); color: var(--ts-text);
          font: 14px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; }
   h1 { font-size: 18px; margin: 0 0 var(--ts-gap); }
@@ -56,7 +57,77 @@
   .chip:has(input:checked) { border-color: var(--ts-accent); background: var(--ts-sub); font-weight: 600; }
   .chip:has(input:focus-visible) { outline: 2px solid var(--ts-accent); outline-offset: 1px; }
   .row-tags { margin-left: 6px; font-size: 11px; color: var(--ts-muted); }
+  /* task status: active ▶ green, done ✓ amber, archived ⤓ grey */
+  .st { display: inline-block; width: 12px; height: 12px; margin-right: 6px; vertical-align: -1px; flex: none; }
+  .st-active { color: var(--ts-pos); }
+  .st-done { color: color-mix(in srgb, #e6a700 85%, var(--ts-text)); }
+  .st-archived { color: var(--ts-muted); }
   .status { min-height: 1.4em; font-size: 12px; color: var(--ts-muted); margin-top: var(--ts-gap); }
+  :root { --ts-pos: color-mix(in srgb, #2e9e44 80%, var(--ts-text)); --ts-neg: color-mix(in srgb, #d93a3a 85%, var(--ts-text)); }
+  h2 { font-size: 15px; margin: calc(var(--ts-gap) * 3) 0 var(--ts-gap); }
+  .panel { background: var(--ts-card); border: 1px solid var(--ts-line); border-radius: 8px; padding: calc(var(--ts-gap) * 2); }
+  .num { font-variant-numeric: tabular-nums; }
+  .pos { color: var(--ts-pos); }
+  .neg { color: var(--ts-neg); }
+
+  /* donuts */
+  .charts { display: flex; flex-wrap: wrap; gap: calc(var(--ts-gap) * 3); align-items: center; }
+  .donut { display: flex; flex-direction: column; align-items: center; gap: 4px; margin: 0; }
+  .donut svg { width: 180px; height: 180px; display: block; }
+  .donut figcaption { font-size: 12px; color: var(--ts-muted); text-align: center; }
+  .donut .c-big { font-size: 15px; font-weight: 700; fill: var(--ts-text); }
+  .donut .c-small { font-size: 8px; fill: var(--ts-muted); }
+  .legend { border-collapse: collapse; width: auto; flex: 1 1 320px; }
+  .legend th, .legend td { position: static; padding: 3px 8px; }
+  .legend th:first-child, .legend td:first-child { min-width: 0; }
+  .legend tr.sum td { font-weight: 700; border-top: 2px solid var(--ts-text); border-bottom: 0; }
+  /* editing time */
+  button[aria-pressed=true] { background: var(--ts-accent); border-color: var(--ts-accent); color: #fff; }
+  .editbar { display: flex; flex-wrap: wrap; gap: var(--ts-gap) calc(var(--ts-gap) * 3); align-items: end; justify-content: space-between;
+             margin-bottom: calc(var(--ts-gap) * 2); padding: var(--ts-gap) calc(var(--ts-gap) * 1.5);
+             border: 1px dashed var(--ts-accent); border-radius: 8px; background: var(--ts-sub); font-size: 12px; }
+  .editbar p { margin: 0; flex: 1 1 320px; }
+  .editbar code { padding: 0 3px; border-radius: 3px; background: var(--ts-card); }
+  td.cell-edit { cursor: text; box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--ts-accent) 35%, transparent); }
+  td.cell-edit:hover { background: var(--ts-sub); }
+  td.cell-edit:focus { outline: 2px solid var(--ts-accent); outline-offset: -2px; }
+  td.cell-edit.exact { color: var(--ts-text); }
+  td.cell-edit.saving { opacity: .5; }
+  td.locked { cursor: not-allowed; }
+  td .cell-input { width: 5.5em; padding: 1px 4px; text-align: right; border-color: var(--ts-accent); }
+  tr.task.added td:first-child::after { content: 'added'; margin-left: 6px; font-size: 11px; color: var(--ts-accent); }
+  .legend tr.done td:first-child { color: var(--ts-muted); }
+  .seg { transition: stroke-width .12s; }
+  .seg.drill { cursor: pointer; }
+  .seg.drill:hover { stroke-width: 20px; }
+  .crumbs { margin: 0 0 var(--ts-gap); font-size: 13px; }
+  .crumbs .hint { font-size: 12px; color: var(--ts-muted); }
+  .linkbtn { border: 0; background: none; padding: 0; color: inherit; text-align: left; text-decoration: underline;
+             text-decoration-color: var(--ts-line); text-underline-offset: 3px; }
+  .linkbtn:hover { color: var(--ts-accent); text-decoration-color: currentColor; }
+  .sw { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
+
+  /* work time vs target */
+  .weeks { display: grid; gap: calc(var(--ts-gap) * 2); grid-template-columns: repeat(auto-fill, minmax(min(100%, 380px), 1fr)); }
+  .week { border: 1px solid var(--ts-line); border-radius: 8px; padding: calc(var(--ts-gap) * 1.5); }
+  .week-head { display: flex; justify-content: space-between; align-items: baseline; gap: var(--ts-gap); }
+  .week-head .muted { font-size: 12px; color: var(--ts-muted); }
+  .week-sum { display: flex; align-items: baseline; gap: var(--ts-gap); flex-wrap: wrap; margin: 6px 0; }
+  .week-sum .big { font-size: 22px; font-weight: 700; }
+  .badge { font-weight: 700; padding: 1px 8px; border-radius: 999px; background: color-mix(in srgb, currentColor 12%, transparent); }
+  .bar-track { position: relative; height: 8px; border-radius: 4px; background: var(--ts-line); overflow: hidden; }
+  .bar-fill { position: absolute; inset: 0 auto 0 0; background: var(--ts-accent); border-radius: 4px; }
+  .bar-mark { position: absolute; top: -2px; bottom: -2px; width: 2px; background: var(--ts-text); }
+  .week .sub { font-size: 12px; color: var(--ts-muted); margin-top: 4px; }
+  .days { width: 100%; margin-top: var(--ts-gap); font-size: 12px; }
+  .days th, .days td { position: static; padding: 2px 4px; text-align: right; }
+  .days th:first-child, .days td:first-child { min-width: 0; text-align: left; color: var(--ts-muted); font-weight: 400; }
+  .days td.future { color: var(--ts-muted); }
+  .range-sum { margin-top: calc(var(--ts-gap) * 2); font-weight: 600; }
+  details.schedule { margin-top: calc(var(--ts-gap) * 2); }
+  details.schedule summary { cursor: pointer; color: var(--ts-muted); font-size: 12px; }
+  details.schedule .bar { margin: var(--ts-gap) 0 0; }
+  input[type=number] { width: 6em; }
 </style>
 </head>
 <body>
@@ -117,15 +188,65 @@
       <button id="csv">CSV</button>
     </div>
   </div>
+  <div class="field"><span>Time</span>
+    <button id="editToggle" aria-pressed="false" title="Edit the time spent on tasks directly in the table">Edit time</button>
+  </div>
 </div>
 
 <div class="field" style="margin-bottom: calc(var(--ts-gap) * 2)"><span>Tags <small>(none selected = all tasks)</small></span>
   <div class="chips" id="tags" role="group" aria-label="Filter by tag"></div>
 </div>
 
+<div class="editbar" id="editbar" hidden>
+  <p>Click a task cell and type the hours — <code>1,5</code>, <code>1:30</code>, <code>45m</code> — then Enter or Tab.
+    An empty cell or <code>0</code> removes the time for that day. Changes are saved to Super Productivity right away.</p>
+  <label class="field"><span>Add a task with no time in this period</span>
+    <span class="group"><input id="addTask" list="addTaskList" placeholder="Search tasks…" autocomplete="off" size="40">
+      <button id="addTaskBtn">Add row</button></span>
+  </label>
+  <datalist id="addTaskList"></datalist>
+</div>
+
 <div class="wrap"><div id="sheet"></div></div>
 <p class="note" id="note"></p>
-<div class="status" id="status" role="status" aria-live="polite"></div>
+
+<section id="charts-section">
+  <h2>Hours per project</h2>
+  <div class="panel" id="charts"></div>
+</section>
+
+<section>
+  <h2>Work time vs target</h2>
+  <div class="panel">
+    <div id="balance"></div>
+    <details class="schedule" id="schedule">
+      <summary>Work schedule</summary>
+      <div class="bar">
+        <label class="field"><span>Daily target</span>
+          <select id="targetSource">
+            <option value="sp">From Super Productivity</option>
+            <option value="custom">Custom</option>
+          </select>
+        </label>
+        <label class="field" id="customHoursField"><span>Hours per day</span>
+          <input type="number" id="customHours" min="0" max="24" step="0.25">
+        </label>
+        <div class="field"><span>Work days</span>
+          <div class="chips" id="workDays" role="group" aria-label="Work days"></div>
+        </div>
+        <label class="field"><span>Count</span>
+          <select id="balanceBasis">
+            <option value="exact">Exact tracked time</option>
+            <option value="rounded">Rounded time</option>
+          </select>
+        </label>
+      </div>
+      <p class="note" id="scheduleNote"></p>
+    </details>
+  </div>
+</section>
+
+<div class="status"><span id="status" role="status" aria-live="polite"></span> <button id="undo" class="linkbtn" hidden>Undo</button></div>
 
 <script src="./timesheet-core.js"></script>
 <script>
@@ -136,11 +257,25 @@
   const $ = (id) => document.getElementById(id);
   const DAY = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-  const DEFAULTS = { preset: 'week', stepMinutes: 60, mode: 'up', scope: 'project-day', fmt: 'decimal', decimal: ',', tagIds: [] };
+  const DEFAULTS = {
+    preset: 'week', stepMinutes: 60, mode: 'up', scope: 'project-day', fmt: 'decimal', decimal: ',', tagIds: [],
+    // Work time vs target. Super Productivity has work hours but no work days, so those live here.
+    targetSource: 'sp', customDailyHours: 8, workDays: [1, 2, 3, 4, 5], balanceBasis: 'exact',
+  };
+  const WEEK_ORDER = [1, 2, 3, 4, 5, 6, 0];
+  const FALLBACK_DAILY_MS = 8 * 3600000;
+  // Categorical palette (Tableau 10), readable on light and dark backgrounds.
+  const PALETTE = ['#4E79A7', '#F28E2B', '#59A14F', '#E15759', '#76B7B2', '#EDC948', '#B07AA1', '#FF9DA7', '#9C755F', '#BAB0AC'];
   let settings = { ...DEFAULTS };
   let range = C.weekRange(new Date());
-  let data = { tasks: [], projects: [], tags: [] };
+  let data = { tasks: [], activeIds: new Set(), projects: [], tags: [], schedule: null };
   let sheet = null;
+  let exactSheet = null;
+  let drillProjectId = null; // project opened in the donuts; not saved
+  // Editing time. None of this is saved: edit mode starts off on every open.
+  let editMode = false;
+  let addedTaskIds = [];  // tasks added to the sheet to enter time for them
+  const undoStack = [];   // [{ taskId, day, before, after }]
 
   const status = (msg) => { $('status').textContent = msg || ''; };
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -161,7 +296,12 @@
 
   // ---------- data ----------
   async function loadData() {
-    if (!api) { data = demoData(); status('Preview mode: demo data (PluginAPI not found).'); return; }
+    if (!api) {
+      data = demoData();
+      data.activeIds = new Set(data.tasks.filter((t) => t.id !== 't3').map((t) => t.id)); // t3 plays an archived task
+      status('Preview mode: demo data (PluginAPI not found).');
+      return;
+    }
     status('Loading…');
     const [active, archived, projects, tags] = await Promise.all([
       api.getTasks(),
@@ -171,13 +311,25 @@
     ]);
     data = {
       tasks: [...(active || []), ...(archived || [])],
+      // Only active tasks are edited: archived ones live outside the task store.
+      activeIds: new Set((active || []).map((t) => t.id)),
       projects: projects || [],
       tags: (tags || []).filter((t) => !C.SYSTEM_TAG_IDS.has(t.id)),
+      schedule: await loadSchedule(),
     };
     // Forget selected tags that no longer exist.
     const known = new Set(data.tags.map((t) => t.id));
     settings.tagIds = (settings.tagIds || []).filter((id) => known.has(id));
     status(`Loaded ${data.tasks.length} tasks, ${data.projects.length} projects and ${data.tags.length} tags.`);
+  }
+
+  /** Settings → Schedule from Super Productivity's global config; null if unavailable. */
+  async function loadSchedule() {
+    if (!api.getAppState) return null;
+    try {
+      const state = await api.getAppState();
+      return (state && state.globalConfig && state.globalConfig.schedule) || null;
+    } catch (e) { console.warn('[SP-Timesheets] could not read the work schedule', e); return null; }
   }
 
   // ---------- range ----------
@@ -212,9 +364,18 @@
     $('decimal').disabled = settings.fmt === 'hm';
 
     renderTagChips();
+    // A cell being edited (e.g. opened while the previous one was saving) survives the re-render.
+    const open = $('sheet').querySelector('td.cell-edit input:not([data-done])');
+    const reopen = open && editMode && { task: open.parentNode.dataset.task, day: open.parentNode.dataset.day, value: open.value };
+    if (open) open.dataset.done = '1';
+
+    const filter = { tagIds: settings.tagIds, includeTaskIds: editMode ? addedTaskIds : [] };
     sheet = C.buildTimesheet(data.tasks, data.projects, range,
-      { stepMinutes: Number(settings.stepMinutes), mode: settings.mode, scope: settings.scope },
-      { tagIds: settings.tagIds });
+      { stepMinutes: Number(settings.stepMinutes), mode: settings.mode, scope: settings.scope }, filter);
+    exactSheet = C.buildTimesheet(data.tasks, data.projects, range, { stepMinutes: 0 }, filter);
+    renderEditBar();
+    renderCharts();
+    renderBalance();
 
     const todayKey = C.toDayKey(new Date());
     const dayCls = (d) => {
@@ -244,8 +405,18 @@
       for (const r of p.rows) {
         const c = exact ? 'exact ' : '';
         const tl = r.tagIds.map((id) => tagTitle(id)).filter(Boolean).join(', ');
-        h += `<tr class="task${r.isDone ? ' done' : ''}"><td>${esc(r.title)}${tl ? `<span class="row-tags">${esc(tl)}</span>` : ''}</td>`;
-        for (const d of sheet.days) h += `<td class="${c}${dayCls(d)}">${fmt(r.cells[d])}</td>`;
+        const editable = editMode && data.activeIds.has(r.taskId);
+        const added = editMode && !r.total && addedTaskIds.includes(r.taskId);
+        h += `<tr class="task${r.isDone ? ' done' : ''}${added ? ' added' : ''}"><td>${statusIcon(r.taskId, r.isDone)}${esc(r.title)}${tl ? `<span class="row-tags">${esc(tl)}</span>` : ''}</td>`;
+        for (const d of sheet.days) {
+          if (editable) {
+            h += `<td class="${c}cell-edit ${dayCls(d)}" tabindex="0" data-task="${esc(r.taskId)}" data-day="${d}"` +
+              ` aria-label="${esc(r.title)}, ${d}">${fmt(r.cells[d])}</td>`;
+          } else {
+            const lock = editMode ? ' locked" title="Archived task — restore it in Super Productivity to edit its time' : '';
+            h += `<td class="${c}${dayCls(d)}${lock}">${fmt(r.cells[d])}</td>`;
+          }
+        }
         h += `<td class="${c}total">${fmt(r.total)}</td></tr>`;
       }
     }
@@ -253,6 +424,10 @@
     for (const d of sheet.days) h += `<td class="${dayCls(d)}">${fmt(sheet.dayTotals[d])}</td>`;
     h += `<td class="total">${fmt(sheet.grandTotal)}</td></tr></tbody></table>`;
     $('sheet').innerHTML = h;
+    if (reopen) {
+      const td = $('sheet').querySelector(`td.cell-edit[data-task="${CSS.escape(reopen.task)}"][data-day="${reopen.day}"]`);
+      if (td) startEdit(td, reopen.value);
+    }
 
     const filterNote = settings.tagIds.length ? `Filtered by ${selectedTagTitles().join(' or ')}. ` : '';
     $('note').textContent = filterNote + (Number(settings.stepMinutes) === 0
@@ -262,7 +437,375 @@
         : `Every task × day cell is rounded ${settings.mode} to ${settings.stepMinutes} min; subtotals are sums of rounded cells.`);
   }
 
+  // ---------- editing time ----------
+  const findTask = (id) => data.tasks.find((t) => t.id === id);
+
+  function renderEditBar() {
+    $('editToggle').setAttribute('aria-pressed', String(editMode));
+    $('editbar').hidden = !editMode;
+    if (!editMode) return;
+    // Active leaf tasks that pass the tag filter and have no row yet, labelled "Project › Task".
+    const shown = new Set(sheet.projects.flatMap((p) => p.rows.map((r) => r.taskId)));
+    const candidates = data.tasks.filter((t) => data.activeIds.has(t.id) && !shown.has(t.id) && !(t.subTaskIds && t.subTaskIds.length));
+    const s = C.buildTimesheet(candidates.concat(data.tasks.filter((t) => t.subTaskIds && t.subTaskIds.length)), data.projects, range, {},
+      { tagIds: settings.tagIds, includeTaskIds: candidates.map((t) => t.id) });
+    addOptions = new Map();
+    for (const p of s.projects) for (const r of p.rows) if (!shown.has(r.taskId)) addOptions.set(`${p.title} › ${r.title}`, r.taskId);
+    $('addTaskList').innerHTML = [...addOptions.keys()].sort().map((l) => `<option value="${esc(l)}"></option>`).join('');
+  }
+  let addOptions = new Map();
+
+  function addRow() {
+    const id = addOptions.get($('addTask').value.trim());
+    if (!id) { status('Pick a task from the list.'); return; }
+    if (!addedTaskIds.includes(id)) addedTaskIds.push(id);
+    $('addTask').value = '';
+    render();
+    const cell = $('sheet').querySelector(`td.cell-edit[data-task="${CSS.escape(id)}"]`);
+    if (cell) cell.focus();
+  }
+
+  function cellValueForInput(ms) {
+    return settings.fmt === 'hm' ? C.formatHM(ms) : C.formatHours(ms, settings.decimal);
+  }
+
+  function startEdit(td, initial) {
+    if (td.querySelector('input')) return;
+    const task = findTask(td.dataset.task);
+    const current = (task && task.timeSpentOnDay && task.timeSpentOnDay[td.dataset.day]) || 0;
+    td.innerHTML = '<input class="cell-input" inputmode="decimal" aria-label="Hours">';
+    const input = td.firstChild;
+    input.value = initial != null ? initial : cellValueForInput(current);
+    input.focus();
+    if (initial == null) input.select();
+    // data-done marks an input that is finished, so render() neither keeps it open nor saves it again on blur.
+    const finish = (save, move) => {
+      if (input.dataset.done) return;
+      input.dataset.done = '1';
+      if (!save) { render(); focusCell(td.dataset.task, td.dataset.day, 0); return; }
+      const ms = C.parseDuration(input.value);
+      if (ms == null) {
+        status(`“${input.value}” is not a duration. Use hours like 1,5 or 1:30 or 45m (up to 24 h).`);
+        delete input.dataset.done; input.focus(); input.select(); return;
+      }
+      setTime(td.dataset.task, td.dataset.day, ms, move);
+    };
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); finish(true, 0); }
+      else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); finish(false); }
+      else if (e.key === 'Tab') { e.preventDefault(); finish(true, e.shiftKey ? -1 : 1); }
+    });
+    input.addEventListener('blur', () => finish(true, null));
+  }
+
+  /** Focus a cell after the table is re-rendered; move = ±1 goes to the previous/next editable cell, null leaves focus alone. */
+  function focusCell(taskId, day, move) {
+    if (move == null) return;
+    const cells = [...$('sheet').querySelectorAll('td.cell-edit')];
+    const i = cells.findIndex((c) => c.dataset.task === taskId && c.dataset.day === day);
+    const target = cells[i + move] || cells[i];
+    if (target) target.focus();
+  }
+
+  async function setTime(taskId, day, ms, move, { isUndo = false } = {}) {
+    const task = findTask(taskId);
+    if (!task) return;
+    const before = (task.timeSpentOnDay && task.timeSpentOnDay[day]) || 0;
+    if (before === ms) { render(); focusCell(taskId, day, move); return; }
+    const timeSpentOnDay = C.setDayTime(task.timeSpentOnDay, day, ms);
+    const cell = $('sheet').querySelector(`td[data-task="${CSS.escape(taskId)}"][data-day="${day}"]`);
+    if (cell) cell.classList.add('saving');
+    try {
+      // Super Productivity recalculates the task's total and its parent's time from timeSpentOnDay.
+      if (api) await api.updateTask(taskId, { timeSpentOnDay });
+    } catch (e) {
+      console.error(e);
+      status('Could not save: ' + (e && e.message || e));
+      render(); focusCell(taskId, day, 0);
+      return;
+    }
+    // Update the local copy so the table, charts and counter follow without reloading everything.
+    const updated = { ...task, timeSpentOnDay, timeSpent: Object.values(timeSpentOnDay).reduce((s, v) => s + v, 0) };
+    data.tasks = data.tasks.map((t) => (t.id === taskId ? updated : t));
+    if (!isUndo) undoStack.push({ taskId, day, before, after: ms });
+    const d = C.fromDayKey(day);
+    status(`${isUndo ? 'Undone' : 'Saved'}: ${task.title}, ${DAY[d.getDay()]} ${d.getDate()}/${d.getMonth() + 1}: ` +
+      `${cellValueForInput(before) || '0'} → ${cellValueForInput(ms) || '0'} h.`);
+    $('undo').hidden = !undoStack.length;
+    render();
+    focusCell(taskId, day, move);
+  }
+
+  async function undo() {
+    const last = undoStack.pop();
+    $('undo').hidden = !undoStack.length;
+    if (last) await setTime(last.taskId, last.day, last.before, 0, { isUndo: true });
+  }
+
+  $('sheet').addEventListener('click', (e) => {
+    const td = e.target.closest('td.cell-edit');
+    if (td) startEdit(td);
+  });
+  $('sheet').addEventListener('keydown', (e) => {
+    const td = e.target.closest('td.cell-edit');
+    if (!td || e.target !== td || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (e.key === 'Enter' || e.key === 'F2') { e.preventDefault(); startEdit(td); }
+    else if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); startEdit(td, ''); }
+    else if (/^[\d.,:]$/.test(e.key)) { e.preventDefault(); startEdit(td, e.key); } // start typing, like a spreadsheet
+  });
+  $('editToggle').addEventListener('click', () => {
+    editMode = !editMode;
+    if (!editMode) addedTaskIds = [];
+    render();
+  });
+  $('addTaskBtn').addEventListener('click', addRow);
+  $('addTask').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); addRow(); } });
+  $('undo').addEventListener('click', undo);
+
+  // ---------- donuts: hours per project ----------
+  function projectColors(ids) {
+    // Use the projects' own colours when they tell the projects apart; otherwise the palette.
+    const own = ids.map((id) => { const p = data.projects.find((x) => x.id === id); return p && p.theme && p.theme.primary; });
+    const distinct = own.every(Boolean) && new Set(own.map((c) => c.toLowerCase())).size === own.length;
+    return Object.fromEntries(ids.map((id, i) => [id, distinct ? own[i] : PALETTE[i % PALETTE.length]]));
+  }
+
+  /** slices: [{ id, title, value, color, drill }] — slices with `drill` open that project when clicked. */
+  function donutSvg(slices, caption) {
+    const total = slices.reduce((s, it) => s + it.value, 0);
+    const r = 46, circ = 2 * Math.PI * r;
+    const shown = slices.filter((it) => it.value > 0);
+    const gap = shown.length > 1 ? 1.2 : 0;
+    let offset = 0, arcs = '';
+    for (const it of shown) {
+      const len = (it.value / total) * circ;
+      const pct = Math.round((it.value / total) * 100);
+      arcs += `<circle cx="60" cy="60" r="${r}" fill="none" stroke="${esc(it.color)}" stroke-width="16"` +
+        ` stroke-dasharray="${Math.max(0, len - gap)} ${circ}" stroke-dashoffset="${-offset}"` +
+        (it.drill ? ` class="seg drill" data-drill="${esc(it.id)}"` : ' class="seg"') + '>' +
+        `<title>${esc(it.title)}: ${fmt(it.value)} h (${pct} %)${it.drill ? ' — click for tasks' : ''}</title></circle>`;
+      offset += len;
+    }
+    const label = `${caption}: ${shown.map((it) => `${it.title} ${fmt(it.value)} h`).join(', ')}`;
+    return `<figure class="donut"><svg viewBox="0 0 120 120" role="img" aria-label="${esc(label)}">` +
+      `<circle cx="60" cy="60" r="${r}" fill="none" stroke="var(--ts-line)" stroke-width="16"/>` +
+      `<g transform="rotate(-90 60 60)">${arcs}</g>` +
+      `<text x="60" y="61" text-anchor="middle" class="c-big">${fmt(total) || '0'}</text>` +
+      `<text x="60" y="74" text-anchor="middle" class="c-small">hours</text></svg>` +
+      `<figcaption>${esc(caption)}</figcaption></figure>`;
+  }
+
+  const pct = (v, t) => (t ? Math.round((v / t) * 100) + ' %' : '');
+  const diffCell = (d) => `<td class="${signCls(d)}">${C.formatSigned(d, { fmt: settings.fmt, decimal: settings.decimal })}</td>`;
+  const roundedCaption = () => `Rounded ${settings.mode} to ${settings.stepMinutes} min`;
+
+  function renderCharts() {
+    const items = C.projectShares(sheet, exactSheet);
+    $('charts-section').hidden = !items.length;
+    if (!items.length) { $('charts').innerHTML = ''; return; }
+    const drill = drillProjectId && C.taskShares(sheet, exactSheet, drillProjectId);
+    if (drill) { renderTaskCharts(drill, items); return; }
+    drillProjectId = null;
+
+    const colors = projectColors(items.map((it) => it.id));
+    const rounded = Number(settings.stepMinutes) > 0;
+    const exactTotal = exactSheet.grandTotal, roundedTotal = sheet.grandTotal;
+    const slices = (key) => items.map((it) => ({ id: it.id, title: it.title, value: it[key], color: colors[it.id], drill: true }));
+
+    let h = '<p class="crumbs">All projects <span class="hint">— click a project to see its tasks</span></p><div class="charts">';
+    h += donutSvg(slices('exact'), 'Exact tracked time');
+    if (rounded) h += donutSvg(slices('rounded'), roundedCaption());
+    h += '<table class="legend num"><thead><tr><th scope="col">Project</th><th scope="col">Exact</th><th scope="col">Share</th>';
+    if (rounded) h += '<th scope="col">Rounded</th><th scope="col">Share</th><th scope="col">Rounding</th>';
+    h += '</tr></thead><tbody>';
+    for (const it of items) {
+      h += `<tr><td><span class="sw" style="background:${esc(colors[it.id])}"></span>` +
+        `<button class="linkbtn" data-drill="${esc(it.id)}" title="Show the tasks in ${esc(it.title)}">${esc(it.title)}</button></td>` +
+        `<td>${fmt(it.exact) || '0'}</td><td>${pct(it.exact, exactTotal)}</td>`;
+      if (rounded) h += `<td>${fmt(it.rounded) || '0'}</td><td>${pct(it.rounded, roundedTotal)}</td>${diffCell(it.rounded - it.exact)}`;
+      h += '</tr>';
+    }
+    h += `<tr class="sum"><td>Total</td><td>${fmt(exactTotal) || '0'}</td><td></td>`;
+    if (rounded) h += `<td>${fmt(roundedTotal) || '0'}</td><td></td>${diffCell(roundedTotal - exactTotal)}`;
+    h += '</tr></tbody></table></div>';
+    $('charts').innerHTML = h;
+  }
+
+  /** One project's tasks. Colours are per task; the project's own colour marks the breadcrumb. */
+  function renderTaskCharts(p, items) {
+    const projectColor = projectColors(items.map((it) => it.id))[p.id];
+    const colors = Object.fromEntries(p.tasks.map((t, i) => [t.id, PALETTE[i % PALETTE.length]]));
+    const rounded = Number(settings.stepMinutes) > 0;
+    const ROUNDING = { id: '__rounding', title: 'Added by rounding', color: 'var(--ts-muted)' };
+
+    let h = `<p class="crumbs"><button class="linkbtn" data-drill="" id="crumb-back">‹ All projects</button> › ` +
+      `<span class="sw" style="background:${esc(projectColor)}"></span><strong>${esc(p.title)}</strong></p><div class="charts">`;
+    h += donutSvg(p.tasks.map((t) => ({ id: t.id, title: t.title, value: t.exact, color: colors[t.id] })), 'Exact tracked time');
+    if (rounded && p.perTask) {
+      h += donutSvg(p.tasks.map((t) => ({ id: t.id, title: t.title, value: t.rounded, color: colors[t.id] })), roundedCaption());
+    } else if (rounded && p.rounding > 0) {
+      // Rounding is per project and day here, so it has no owner task: show it as its own grey slice.
+      h += donutSvg([...p.tasks.map((t) => ({ id: t.id, title: t.title, value: t.exact, color: colors[t.id] })),
+        { ...ROUNDING, value: p.rounding }], roundedCaption());
+    }
+
+    h += '<table class="legend num"><thead><tr><th scope="col">Task</th><th scope="col">Exact</th><th scope="col">Share</th>';
+    if (rounded && p.perTask) h += '<th scope="col">Rounded</th><th scope="col">Share</th><th scope="col">Rounding</th>';
+    h += '</tr></thead><tbody>';
+    for (const t of p.tasks) {
+      h += `<tr${t.isDone ? ' class="done"' : ''}><td><span class="sw" style="background:${esc(colors[t.id])}"></span>${statusIcon(t.id, t.isDone)}${esc(t.title)}</td>` +
+        `<td>${fmt(t.exact) || '0'}</td><td>${pct(t.exact, p.exact)}</td>`;
+      if (rounded && p.perTask) h += `<td>${fmt(t.rounded) || '0'}</td><td>${pct(t.rounded, p.rounded)}</td>${diffCell(t.rounded - t.exact)}`;
+      h += '</tr>';
+    }
+    h += `<tr class="sum"><td>Total</td><td>${fmt(p.exact) || '0'}</td><td></td>`;
+    if (rounded && p.perTask) h += `<td>${fmt(p.rounded) || '0'}</td><td></td>${diffCell(p.rounding)}`;
+    h += '</tr>';
+    if (rounded && !p.perTask) {
+      h += `<tr><td><span class="sw" style="background:${ROUNDING.color}"></span>Rounding (project per day)</td>${diffCell(p.rounding)}<td></td></tr>` +
+        `<tr class="sum"><td>Rounded total</td><td>${fmt(p.rounded) || '0'}</td><td></td></tr>`;
+    }
+    h += '</tbody></table></div>';
+    if (rounded && !p.perTask) {
+      h += '<p class="note">Rounding applies to the project\'s total for each day, so tasks have no rounded hours of their own' +
+        (p.rounding > 0 ? ' and it is shown as one grey slice' : '') +
+        '. Set <em>Apply rounding to</em> to <em>Each task per day</em> to round every task.</p>';
+    }
+    $('charts').innerHTML = h;
+  }
+
+  /** Open a project's tasks, or go back to all projects (id null). Keeps keyboard focus in the chart area. */
+  function drillTo(id) {
+    const from = drillProjectId;
+    drillProjectId = id;
+    renderCharts();
+    const target = id ? $('crumb-back') : from && [...$('charts').querySelectorAll('button[data-drill]')].find((b) => b.dataset.drill === from);
+    if (target) target.focus();
+  }
+  $('charts').addEventListener('click', (e) => {
+    const el = e.target.closest('[data-drill]');
+    if (el) drillTo(el.getAttribute('data-drill') || null);
+  });
+  $('charts').addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && drillProjectId) drillTo(null);
+  });
+
+  // ---------- work time vs target ----------
+  function spDailyMs() {
+    const s = data.schedule;
+    return s && s.isWorkStartEndEnabled ? C.dailyTargetFromSchedule(s) : null;
+  }
+  function dailyTargetMs() {
+    if (settings.targetSource === 'custom') return Math.max(0, Number(settings.customDailyHours) || 0) * 3600000;
+    return spDailyMs() || FALLBACK_DAILY_MS;
+  }
+  function isoWeek(date) {
+    const t = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    t.setUTCDate(t.getUTCDate() + 4 - (t.getUTCDay() || 7));
+    return Math.ceil(((t - Date.UTC(t.getUTCFullYear(), 0, 1)) / 86400000 + 1) / 7);
+  }
+  const dm = (key) => { const d = C.fromDayKey(key); return `${d.getDate()}/${d.getMonth() + 1}`; };
+  const signCls = (ms) => (Math.round(ms / 60000) > 0 ? 'pos' : Math.round(ms / 60000) < 0 ? 'neg' : '');
+  const h0 = (ms) => fmt(ms) || (settings.fmt === 'hm' ? '0:00' : '0');
+
+  function renderBalance() {
+    const daily = dailyTargetMs();
+    const basis = settings.balanceBasis === 'rounded' ? sheet : exactSheet;
+    const todayKey = C.toDayKey(new Date());
+    const b = C.workBalance(basis.dayTotals, { dailyTargetMs: daily, workDays: settings.workDays, todayKey });
+    const sf = { fmt: settings.fmt, decimal: settings.decimal };
+
+    let h = '<div class="weeks">';
+    for (const w of b.weeks) {
+      const full = w.days.length === 7 ? '' : ' (part)';
+      const pctWorked = w.target ? Math.min(100, (w.worked / w.target) * 100) : 0;
+      const pctToDate = w.target ? Math.min(100, (w.targetToDate / w.target) * 100) : 0;
+      h += `<article class="week"><div class="week-head"><strong>Week ${isoWeek(C.fromDayKey(w.from))}${full}</strong>` +
+        `<span class="muted">${dm(w.from)} – ${dm(w.to)}</span></div>`;
+      h += `<div class="week-sum num"><span class="big">${h0(w.worked)}</span><span>of ${h0(w.target)} h</span>` +
+        (w.targetToDate || w.worked ? `<span class="badge ${signCls(w.balance)}" title="Worked minus target${w.isComplete ? '' : ' so far'}">${C.formatSigned(w.balance, sf)}</span>` : '') +
+        '</div>';
+      if (w.target) {
+        h += `<div class="bar-track" aria-hidden="true"><div class="bar-fill" style="width:${pctWorked}%"></div>` +
+          (w.isComplete ? '' : `<div class="bar-mark" style="left:calc(${pctToDate}% - 1px)" title="Target so far"></div>`) + '</div>';
+      }
+      if (!w.isComplete) {
+        h += `<div class="sub num">Target so far ${h0(w.targetToDate)} h · ${w.remaining ? `${h0(w.remaining)} h left this week` : 'weekly target reached'}</div>`;
+      }
+      h += '<table class="days num"><thead><tr><th scope="row"></th>';
+      for (const d of w.days) h += `<th scope="col">${DAY[C.fromDayKey(d.day).getDay()]}</th>`;
+      h += '</tr></thead><tbody><tr><th scope="row">Worked</th>';
+      for (const d of w.days) h += `<td class="${d.isFuture ? 'future' : ''}">${fmt(d.worked) || (d.isFuture ? '' : '–')}</td>`;
+      h += '</tr><tr><th scope="row">Target</th>';
+      for (const d of w.days) h += `<td class="future">${fmt(d.target) || '–'}</td>`;
+      h += '</tr><tr><th scope="row">±</th>';
+      for (const d of w.days) {
+        h += d.balance == null || (!d.target && !d.worked) ? '<td></td>' : `<td class="${signCls(d.balance)}">${C.formatSigned(d.balance, sf)}</td>`;
+      }
+      h += '</tr></tbody></table></article>';
+    }
+    h += '</div>';
+    if (b.weeks.length > 1) {
+      h += `<div class="range-sum num">Whole range: ${h0(b.worked)} of ${h0(b.target)} h · ` +
+        `<span class="${signCls(b.balance)}">${C.formatSigned(b.balance, sf)} h</span>${b.targetToDate < b.target ? ' so far' : ''}</div>`;
+    }
+    const filtered = settings.tagIds.length ? ` Counts only tasks tagged ${selectedTagTitles().join(' or ')}.` : '';
+    h += `<p class="note">${settings.balanceBasis === 'rounded' ? 'Rounded time, as in the table.' : 'Exact tracked time, before rounding.'}` +
+      ` Balance counts days up to and including today.${esc(filtered)}</p>`;
+    $('balance').innerHTML = h;
+    renderScheduleControls(daily);
+  }
+
+  function renderScheduleControls(daily) {
+    $('targetSource').value = settings.targetSource;
+    $('customHours').value = String(settings.customDailyHours);
+    $('customHoursField').hidden = settings.targetSource !== 'custom';
+    $('balanceBasis').value = settings.balanceBasis;
+    const on = new Set(settings.workDays);
+    $('workDays').innerHTML = WEEK_ORDER.map((d) =>
+      `<label class="chip"><input type="checkbox" value="${d}"${on.has(d) ? ' checked' : ''}>${DAY[d]}</label>`).join('');
+
+    const s = data.schedule;
+    const weekly = daily * settings.workDays.length;
+    let src;
+    if (settings.targetSource === 'custom') src = 'Custom daily target.';
+    else if (spDailyMs()) {
+      src = `From Super Productivity: ${s.workStart}–${s.workEnd}` +
+        (s.isLunchBreakEnabled ? `, minus lunch ${s.lunchBreakStart}–${s.lunchBreakEnd}` : '') + '.';
+    } else {
+      src = 'Super Productivity has no work start and end set (Settings → Schedule), so 8 h per day is used.';
+    }
+    $('scheduleNote').textContent = `${src} ${h0(daily)} h × ${settings.workDays.length} days = ${h0(weekly)} h per week.`;
+  }
+
+  $('targetSource').addEventListener('change', (e) => { settings.targetSource = e.target.value; saveSettings(); render(); });
+  $('customHours').addEventListener('change', (e) => {
+    const v = Number(e.target.value);
+    if (v >= 0 && v <= 24) { settings.customDailyHours = v; saveSettings(); }
+    render();
+  });
+  $('balanceBasis').addEventListener('change', (e) => { settings.balanceBasis = e.target.value; saveSettings(); render(); });
+  $('workDays').addEventListener('change', (e) => {
+    if (!e.target.matches('input[type=checkbox]')) return;
+    settings.workDays = [...$('workDays').querySelectorAll('input:checked')].map((i) => Number(i.value));
+    saveSettings(); render();
+  });
+
   // ---------- tags ----------
+  // ---------- task status badge ----------
+  // Archived wins over done: archived tasks are usually done too, and only the archive matters for editing.
+  const STATUS_ICONS = {
+    active: ['Active', '<path d="M4 2.5v11L13.5 8z" fill="currentColor"/>'],
+    done: ['Done', '<path d="M2.5 8.5l3.5 3.5 7.5-8" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>'],
+    archived: ['Archived', '<g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">' +
+      '<path d="M1.5 9.5v4h13v-4"/><path d="M8 1.5v8M4.8 6.5L8 9.7l3.2-3.2"/></g>'],
+  };
+  function statusIcon(taskId, isDone) {
+    const key = !data.activeIds.has(taskId) ? 'archived' : isDone ? 'done' : 'active';
+    const [label, body] = STATUS_ICONS[key];
+    return `<svg class="st st-${key}" viewBox="0 0 16 16" role="img" aria-label="${label}"><title>${label}</title>${body}</svg>`;
+  }
+
   function tagTitle(id) { const t = data.tags.find((x) => x.id === id); return t ? t.title : ''; }
   function selectedTagTitles() { return settings.tagIds.map(tagTitle).filter(Boolean); }
   function tagTitleMap() { return Object.fromEntries(data.tags.map((t) => [t.id, t.title])); }
@@ -343,6 +886,7 @@
     const d = C.dayKeys(w.from, w.to);
     const m = 60000;
     return {
+      schedule: { isWorkStartEndEnabled: true, workStart: '8:00', workEnd: '17:00', isLunchBreakEnabled: true, lunchBreakStart: '12:00', lunchBreakEnd: '13:00' },
       projects: [{ id: 'p1', title: 'Office — Hospital project' }, { id: 'p2', title: 'Freelance — Website' }],
       tags: [{ id: 'w', title: 'Office', color: '#607D8B' }, { id: 'n', title: 'Freelance', color: '#1E88E5' }, { id: 'pe', title: 'Personal', color: '#43A047' }],
       tasks: [
@@ -350,7 +894,8 @@
         { id: 't2', title: 'IFC export', projectId: 'p1', tagIds: ['w'], subTaskIds: [], timeSpentOnDay: { [d[0]]: 20 * m, [d[2]]: 3 * 60 * m } },
         { id: 't3', title: 'Coordination meeting', projectId: 'p1', tagIds: ['w'], subTaskIds: [], isDone: true, timeSpentOnDay: { [d[0]]: 20 * m } },
         { id: 't4', title: 'Website', projectId: 'p2', tagIds: ['n'], subTaskIds: ['t5'], timeSpentOnDay: { [d[3]]: 50 * m } },
-        { id: 't5', title: 'Fonts', projectId: 'p2', parentId: 't4', subTaskIds: [], timeSpentOnDay: { [d[3]]: 50 * m } },
+        { id: 't5', title: 'Fonts', projectId: 'p2', parentId: 't4', subTaskIds: [], isDone: true, timeSpentOnDay: { [d[3]]: 50 * m } },
+        { id: 't6', title: 'Site visit report', projectId: 'p1', tagIds: ['w'], subTaskIds: [], timeSpentOnDay: {} },
       ],
     };
   }

@@ -85,6 +85,8 @@
    */
   function buildTimesheet(tasks, projects, range, rounding = {}, filter = {}) {
     const { stepMinutes = 0, mode = 'up', scope = 'project-day' } = rounding;
+    // Tasks the user added to the sheet to enter time: shown even with no time in the range.
+    const include = new Set(filter.includeTaskIds || []);
     const days = dayKeys(range.from, range.to);
     const daySet = new Set(days);
 
@@ -106,7 +108,7 @@
           any = true;
         }
       }
-      if (!any) continue;
+      if (!any && !include.has(t.id)) continue;
 
       const parent = t.parentId ? byId.get(t.parentId) : null;
       const tagIds = [...new Set([...(t.tagIds || []), ...((parent && parent.tagIds) || [])])].filter(
@@ -160,6 +162,150 @@
     return { days, projects: out, dayTotals, grandTotal, rounding: { stepMinutes, mode, scope }, filter: { tagIds: [...wanted] } };
   }
 
+  /**
+   * Hours per project, exact and rounded side by side, for the donut charts.
+   * exactSheet: the same timesheet built with stepMinutes 0. Largest exact share first.
+   */
+  function projectShares(roundedSheet, exactSheet) {
+    const byId = new Map();
+    for (const p of exactSheet.projects) byId.set(p.id, { id: p.id, title: p.title, exact: p.total, rounded: 0 });
+    for (const p of roundedSheet.projects) {
+      if (!byId.has(p.id)) byId.set(p.id, { id: p.id, title: p.title, exact: 0, rounded: 0 });
+      byId.get(p.id).rounded = p.total;
+    }
+    return [...byId.values()].sort((a, b) => b.exact - a.exact || a.title.localeCompare(b.title));
+  }
+
+  /**
+   * Hours per task inside one project, for drilling into a donut segment.
+   *
+   * With scope 'cell' every task has its own rounded hours (perTask: true).
+   * With scope 'project-day' rounding applies to the project's daily total, so tasks
+   * have no rounded hours of their own: `rounded` is null on each task and the
+   * project's difference is reported once, as `rounding`.
+   */
+  function taskShares(roundedSheet, exactSheet, projectId) {
+    const ep = exactSheet.projects.find((p) => p.id === projectId);
+    const rp = roundedSheet.projects.find((p) => p.id === projectId);
+    if (!ep && !rp) return null;
+    const perTask = roundedSheet.rounding.scope === 'cell';
+    const byId = new Map();
+    for (const r of (ep && ep.rows) || []) byId.set(r.taskId, { id: r.taskId, title: r.title, isDone: r.isDone, exact: r.total, rounded: perTask ? 0 : null });
+    if (perTask) {
+      for (const r of (rp && rp.rows) || []) {
+        if (!byId.has(r.taskId)) byId.set(r.taskId, { id: r.taskId, title: r.title, isDone: r.isDone, exact: 0, rounded: 0 });
+        byId.get(r.taskId).rounded = r.total;
+      }
+    }
+    const exact = ep ? ep.total : 0;
+    const rounded = rp ? rp.total : 0;
+    return {
+      id: projectId,
+      title: (ep || rp).title,
+      perTask,
+      exact,
+      rounded,
+      rounding: rounded - exact,
+      tasks: [...byId.values()].sort((a, b) => b.exact - a.exact || a.title.localeCompare(b.title)),
+    };
+  }
+
+  /** "9:00" / "17:30" → minutes after midnight; null if not a clock time. */
+  function parseClock(s) {
+    const m = /^(\d{1,2}):(\d{2})$/.exec(String(s || '').trim());
+    if (!m) return null;
+    const min = Number(m[1]) * 60 + Number(m[2]);
+    return min >= 0 && min <= 24 * 60 ? min : null;
+  }
+
+  /**
+   * Daily target from Super Productivity's Settings → Schedule:
+   * work end − work start, minus the lunch break when that is enabled.
+   * Returns ms, or null when work hours are not set.
+   */
+  function dailyTargetFromSchedule(schedule) {
+    if (!schedule) return null;
+    const start = parseClock(schedule.workStart);
+    const end = parseClock(schedule.workEnd);
+    if (start == null || end == null || end <= start) return null;
+    let min = end - start;
+    if (schedule.isLunchBreakEnabled) {
+      const ls = parseClock(schedule.lunchBreakStart);
+      const le = parseClock(schedule.lunchBreakEnd);
+      // Only the part of the lunch break that falls inside the work day.
+      if (ls != null && le != null && le > ls) min -= Math.max(0, Math.min(le, end) - Math.max(ls, start));
+    }
+    return min > 0 ? min * MS_PER_MIN : null;
+  }
+
+  /**
+   * Worked time against the target, per day and per week.
+   *
+   * dayTotals: { 'YYYY-MM-DD': ms } for every day in the range
+   * opts.dailyTargetMs: target for one work day
+   * opts.workDays:      weekdays that are work days, 0 = Sunday … 6 = Saturday
+   * opts.todayKey:      days after this have no target yet, so a week in progress
+   *                     shows the balance so far, not against the whole week
+   * opts.weekStartsOn:  1 = Monday
+   *
+   * Weeks are clipped to the range, so a month view starts and ends with partial weeks.
+   */
+  function workBalance(dayTotals, { dailyTargetMs = 8 * 60 * MS_PER_MIN, workDays = [1, 2, 3, 4, 5], todayKey = toDayKey(new Date()), weekStartsOn = 1 } = {}) {
+    const work = new Set(workDays);
+    const weeks = [];
+    let week = null;
+    for (const day of Object.keys(dayTotals).sort()) {
+      const date = fromDayKey(day);
+      const wr = weekRange(date, weekStartsOn);
+      if (!week || week.weekFrom !== wr.from) {
+        week = { weekFrom: wr.from, from: day, to: day, days: [], worked: 0, target: 0, targetToDate: 0 };
+        weeks.push(week);
+      }
+      const target = work.has(date.getDay()) ? dailyTargetMs : 0;
+      const counted = day <= todayKey;
+      const worked = dayTotals[day] || 0;
+      week.days.push({ day, worked, target, balance: counted ? worked - target : null, isFuture: !counted });
+      week.to = day;
+      week.worked += worked;
+      week.target += target;
+      if (counted) week.targetToDate += target;
+    }
+    for (const w of weeks) {
+      w.balance = w.worked - w.targetToDate;
+      w.remaining = Math.max(0, w.target - w.worked);
+      w.isComplete = w.to <= todayKey;
+      delete w.weekFrom;
+    }
+    const sum = (k) => weeks.reduce((s, w) => s + w[k], 0);
+    return { weeks, worked: sum('worked'), target: sum('target'), targetToDate: sum('targetToDate'), balance: sum('balance') };
+  }
+
+  /**
+   * Parse a typed duration into ms. Accepts decimal hours with comma or point ("1,5", "1.5"),
+   * h:mm ("1:30"), and units ("90m", "90 min", "2h", "1h 30m"). Empty means zero.
+   * Returns null for anything else, or for more than 24 h.
+   */
+  function parseDuration(input) {
+    const s = String(input == null ? '' : input).trim().toLowerCase().replace(/\s+/g, ' ');
+    if (s === '' || s === '-' || s === '–') return 0;
+    let min = null;
+    let m;
+    if ((m = /^(\d{1,2}):([0-5]\d)$/.exec(s))) min = Number(m[1]) * 60 + Number(m[2]);
+    else if ((m = /^(\d+(?:[.,]\d+)?|[.,]\d+) ?h?$/.exec(s))) min = Number(m[1].replace(',', '.')) * 60;
+    else if ((m = /^(\d+) ?(?:m|min)$/.exec(s))) min = Number(m[1]);
+    else if ((m = /^(\d+(?:[.,]\d+)?) ?h ?(\d+) ?(?:m|min)?$/.exec(s))) min = Number(m[1].replace(',', '.')) * 60 + Number(m[2]);
+    if (min == null || !isFinite(min) || min > 24 * 60) return null;
+    return Math.round(min) * MS_PER_MIN;
+  }
+
+  /** A task's timeSpentOnDay with one day set to `ms`; zero removes the day. Does not mutate. */
+  function setDayTime(timeSpentOnDay, day, ms) {
+    const out = { ...(timeSpentOnDay || {}) };
+    if (ms > 0) out[day] = ms;
+    else delete out[day];
+    return out;
+  }
+
   /** Decimal hours, e.g. 5400000 → "1.50" (or "1,50"). Empty string for zero. */
   function formatHours(ms, decimal = '.', blankZero = true) {
     if (!ms && blankZero) return '';
@@ -172,6 +318,14 @@
     if (!ms && blankZero) return '';
     const totalMin = Math.round(ms / MS_PER_MIN);
     return `${Math.floor(totalMin / 60)}:${String(totalMin % 60).padStart(2, '0')}`;
+  }
+
+  /** Balance with an explicit sign, e.g. "+1.50", "−0:30", "±0". Uses a real minus sign. */
+  function formatSigned(ms, { fmt = 'decimal', decimal = '.' } = {}) {
+    const abs = Math.abs(ms);
+    if (Math.round(abs / MS_PER_MIN) === 0) return '±0';
+    const body = fmt === 'hm' ? formatHM(abs) : formatHours(abs, decimal);
+    return (ms < 0 ? '−' : '+') + body;
   }
 
   function csvEscape(v, sep) {
@@ -208,8 +362,16 @@
     monthRange,
     roundMs,
     buildTimesheet,
+    projectShares,
+    taskShares,
+    parseClock,
+    dailyTargetFromSchedule,
+    workBalance,
     formatHours,
     formatHM,
+    formatSigned,
+    parseDuration,
+    setDayTime,
     toDelimited,
   };
 

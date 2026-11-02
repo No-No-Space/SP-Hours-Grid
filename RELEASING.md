@@ -32,4 +32,4 @@ Open a PR to the same file that changes `release.version`, `release.downloadUrl`
 
 ## What the listing does and does not mean
 
-A listing is not a code review: the app only checks that the downloaded ZIP matches the hash. This plugin keeps its review surface small on purpose — no `plugin.js`, no network access, no `nodeExecution`, no `postMessage` listeners; it only reads tasks, projects and tags and stores its own settings.
+A listing is not a code review: the app only checks that the downloaded ZIP matches the hash. This plugin keeps its review surface small on purpose — no `plugin.js`, no network access, no `nodeExecution`, no `postMessage` listeners; it reads tasks, projects, tags and the schedule settings, stores its own settings, and writes only a task's `timeSpentOnDay` when the user edits a cell.

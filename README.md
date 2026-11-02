@@ -1,8 +1,8 @@
 # SP-Timesheets
 
 > Created: 2026-11-01 / by Aksel Alvarez Jurgueson & Claude
-> Last updated: 2026-11-01 / by Claude
-> Version: v0.2.2
+> Last updated: 2026-11-02 / by Claude
+> Version: v0.3.0
 
 A [Super Productivity](https://super-productivity.com) plugin that shows tracked time as a timesheet: **tasks grouped by project in rows, days in columns**, with a tag filter, configurable rounding and export to CSV or the clipboard.
 
@@ -14,6 +14,7 @@ It reads the per-day time Super Productivity already records on every task (`tim
 
 - Week, month or custom date range; previous / next / today navigation. Weeks start on Monday.
 - Project subtotal rows, task rows, a total column and a daily total row. Weekends are shaded.
+- Each task shows its status: a green ▶ for active, an amber ✓ for done but not yet archived, and a grey archive icon (tray with a down arrow) for archived.
 - **Tag filter**: pick one or more tags (e.g. Office, Freelance, Personal) to show only tasks carrying any of them; none selected shows everything. A subtask counts as tagged if its parent is. Tag names appear next to each task and in a *Tags* column in the export, and the CSV filename carries the selected tags.
 - Rounding: none, 15 min, 30 min or 1 hour; up, nearest or down.
 - Rounding scope:
@@ -21,6 +22,12 @@ It reads the per-day time Super Productivity already records on every task (`tim
   - **Each task per day** — every cell is rounded and subtotals are sums of rounded cells. The same three tasks bill as 3 h.
 - Decimal hours (comma or point) or h:mm.
 - **Copy** puts a tab-separated table on the clipboard (pastes straight into Excel); **CSV** saves a `;`-separated file with a UTF-8 BOM, which Swedish-locale Excel opens correctly.
+- **Edit time in the table**: turn on **Edit time**, click a task cell (or focus it and start typing) and enter the hours — `1,5`, `1.5`, `1:30`, `45m`, `1h 30m`. Enter saves, Tab saves and moves to the next day, Esc cancels; an empty cell or `0` removes that day's time. The change is saved to the task in Super Productivity right away, which also updates the task's total and its parent's time. **Undo** reverts the last changes one by one. To log time on a task that has none in the period, pick it under *Add a task with no time in this period*. Archived tasks are read-only. Edit mode is off every time the plugin opens.
+- **Hours per project**: donut charts below the table, one for exact tracked time and one for rounded time, with a legend that shows each project's hours, share and how much rounding adds. Click a segment or a project name to see that project's tasks; *All projects* or Esc goes back. With *Each task per day* every task has its own rounded hours; with *Project per day* rounding belongs to the project's daily total, so it shows as one grey *Added by rounding* slice.
+- **Work time vs target**: one card per week with hours worked, the weekly target and the plus or minus balance, plus worked / target / ± for every day. A week in progress is compared with the target up to and including today, and shows how many hours are left. Month and custom ranges show one card per (partial) week and a total for the range.
+  - The daily target comes from Super Productivity's **Settings → Schedule**: work end − work start, minus the lunch break if it is enabled (8:00–17:00 with a 12:00–13:00 lunch = 8 h). If work hours are not enabled there, 8 h is used; a custom daily target can be set instead.
+  - Super Productivity has no setting for work days, so they are chosen in the plugin (Mon–Fri by default): 8 h × 5 days = 40 h per week.
+  - The balance counts exact tracked time by default, or rounded time if chosen, and respects the tag filter.
 - Settings are stored with `persistDataSynced`, so they follow Super Productivity's sync.
 - Colours come from the theme variables Super Productivity injects into plugin iframes, so the table follows the app's theme.
 
@@ -42,7 +49,7 @@ Then open **Timesheets** from the plugin menu.
 
 ## Privacy and permissions
 
-The plugin is a single `index.html` running in Super Productivity's plugin iframe. It has no `plugin.js`, makes no network requests and does not use `nodeExecution`. It reads tasks (active and archived), projects and tags, and stores only its own settings with `persistDataSynced`. It never writes to your tasks.
+The plugin is a single `index.html` running in Super Productivity's plugin iframe. It has no `plugin.js`, makes no network requests and does not use `nodeExecution`. It reads tasks (active and archived), projects, tags and the work hours from Super Productivity's schedule settings (through `getAppState`), and stores only its own settings with `persistDataSynced`. It writes to a task only when you change a cell in **Edit time** mode, and then only that task's `timeSpentOnDay` (through `updateTask`).
 
 ## Develop
 

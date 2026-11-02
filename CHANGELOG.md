@@ -2,6 +2,15 @@
 
 All notable changes to this plugin. Versions follow the `version` in `src/manifest.json`.
 
+## 0.3.0 — 2026-11-02
+
+- Donut charts of hours per project, exact and rounded side by side, with a legend showing what rounding adds per project.
+- Click a project in the donuts or the legend to see its tasks, exact and rounded; with *Project per day* rounding the project's rounding shows as one grey slice.
+- Work time vs target: worked hours per day and per week against a target taken from Super Productivity's work start, work end and lunch break, with work days chosen in the plugin (Mon–Fri by default). Shows the plus or minus balance, the target so far for the current week and the hours left.
+- **Edit time** mode: change a task's time for a day directly in the table (decimal hours, h:mm or minutes), add a task that has no time in the period, and undo changes. Saved to Super Productivity with `updateTask`; archived tasks are read-only.
+- Status badge on every task: active (green ▶), done (amber ✓) or archived (grey archive icon), in the table and in the per-project donut legend.
+- New permissions: `getAppState`, used only to read the schedule settings, and `updateTask`, used only to save edited time.
+
 ## 0.2.2 — 2026-11-01
 
 First version submitted to the community list. (0.2.1 was tagged but never released.)

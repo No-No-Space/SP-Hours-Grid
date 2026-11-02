@@ -1,0 +1,6 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    { "name": "plugin-preview", "runtimeExecutable": "npx", "runtimeArgs": ["--yes", "http-server@14.1.1", "dist/plugin", "-p", "5178", "-c-1"], "port": 5178 }
+  ]
+}
