@@ -14,8 +14,8 @@ const dist = join(root, 'dist');
 const out = join(dist, 'plugin');
 
 const manifest = JSON.parse(readFileSync(join(src, 'manifest.json'), 'utf8'));
-const core = readFileSync(join(src, 'timesheet-core.js'), 'utf8');
-const tag = '<script src="./timesheet-core.js"></script>';
+const core = readFileSync(join(src, 'hours-grid-core.js'), 'utf8');
+const tag = '<script src="./hours-grid-core.js"></script>';
 let html = readFileSync(join(src, 'index.html'), 'utf8');
 if (!html.includes(tag)) throw new Error(`index.html must contain ${tag}`);
 html = html.replace(tag, () => `<script>\n${core}\n</script>`);

@@ -11,7 +11,7 @@ const MSG_DOWNLOAD = 'HOURS_GRID_DOWNLOAD';
 const MSG_ACK = 'HOURS_GRID_DOWNLOAD_ACK';
 const MSG_RESULT = 'HOURS_GRID_DOWNLOAD_RESULT';
 const MAX_EXPORT_CHARS = 10 * 1024 * 1024;
-// timesheet_<from>_<to>[_<tags>].csv: letters, digits, _ . - only, so no paths.
+// hours-grid_<from>_<to>[_<tags>].csv: letters, digits, _ . - only, so no paths.
 const EXPORT_NAME_RE = /^[\w.-]{1,160}\.csv$/;
 
 // Super Productivity renders plugin views with srcdoc and tags each iframe with

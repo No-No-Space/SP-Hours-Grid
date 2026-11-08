@@ -37,7 +37,7 @@ function host() {
 }
 
 const csv = (over = {}) => ({
-  type: 'HOURS_GRID_DOWNLOAD', requestId: 'r1', filename: 'timesheet_2026-11-02_2026-11-08.csv', data: 'a;b\n', ...over,
+  type: 'HOURS_GRID_DOWNLOAD', requestId: 'r1', filename: 'hours-grid_2026-11-02_2026-11-08.csv', data: 'a;b\n', ...over,
 });
 
 test('PLUGIN_ID in plugin.js matches the manifest id', () => {
@@ -55,7 +55,7 @@ test('saves a CSV from its own view and replies ack then ok', async () => {
   const h = host();
   const v = h.view(manifest.id);
   await h.send(v, csv());
-  assert.deepEqual(h.saved, [{ filename: 'timesheet_2026-11-02_2026-11-08.csv', data: 'a;b\n' }]);
+  assert.deepEqual(h.saved, [{ filename: 'hours-grid_2026-11-02_2026-11-08.csv', data: 'a;b\n' }]);
   assert.deepEqual(v.replies.map((r) => r.type), ['HOURS_GRID_DOWNLOAD_ACK', 'HOURS_GRID_DOWNLOAD_RESULT']);
   assert.equal(v.replies[1].ok, true);
   assert.equal(v.replies[1].requestId, 'r1');

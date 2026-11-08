@@ -2,6 +2,11 @@
 
 All notable changes to this plugin. Versions follow the `version` in `src/manifest.json`.
 
+## Unreleased
+
+- The exported CSV is now named `hours-grid_<from>_<to>[_<tags>].csv` (was `timesheet_…`).
+- Internal rename to match the plugin name: `src/timesheet-core.js` → `src/hours-grid-core.js`, `TimesheetCore` → `HoursGridCore`, `buildTimesheet` → `buildHoursGrid`. No change in behaviour.
+
 ## 0.4.0 — 2026-11-08
 
 - **Renamed to Hours Grid**, id `hours-grid` (was *Timesheets*, `sp-timesheets`), so it is not confused with the *Timesheet* plugin already in the community list. Super Productivity sees it as a new plugin: uninstall the old one and set the settings again. The repository is now `No-No-Space/SP-Hours-Grid`; GitHub redirects the old `SP-Timesheets` links.

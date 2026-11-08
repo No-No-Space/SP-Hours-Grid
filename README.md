@@ -60,7 +60,7 @@ src/
   manifest.json        plugin manifest
   index.html           UI (loads the core with <script src>, inlined at build time)
   plugin.js            host side: saves the CSV the view sends (iframes cannot download)
-  timesheet-core.js    pure calculation functions — aggregation, rounding, export
+  hours-grid-core.js    pure calculation functions — aggregation, rounding, export
   icon.svg
 test/core.test.js      node:test unit tests for the core
 test/manifest.test.js  manifest checks the community listing relies on
@@ -82,7 +82,7 @@ scripts/listing-entry.mjs  prints the community-plugins.json entry
 
 ## Contributing
 
-Issues and pull requests are welcome. Run `npm test` before opening a PR; the calculation logic lives in `src/timesheet-core.js` and should stay free of DOM and `PluginAPI` calls so it can be tested in Node.
+Issues and pull requests are welcome. Run `npm test` before opening a PR; the calculation logic lives in `src/hours-grid-core.js` and should stay free of DOM and `PluginAPI` calls so it can be tested in Node.
 
 ## License
 

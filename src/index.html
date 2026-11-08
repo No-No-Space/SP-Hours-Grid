@@ -248,11 +248,11 @@
 
 <div class="status"><span id="status" role="status" aria-live="polite"></span> <button id="undo" class="linkbtn" hidden>Undo</button></div>
 
-<script src="./timesheet-core.js"></script>
+<script src="./hours-grid-core.js"></script>
 <script>
 (function () {
   'use strict';
-  const C = window.TimesheetCore;
+  const C = window.HoursGridCore;
   const api = window.PluginAPI || null;
   const $ = (id) => document.getElementById(id);
   const DAY = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -370,9 +370,9 @@
     if (open) open.dataset.done = '1';
 
     const filter = { tagIds: settings.tagIds, includeTaskIds: editMode ? addedTaskIds : [] };
-    sheet = C.buildTimesheet(data.tasks, data.projects, range,
+    sheet = C.buildHoursGrid(data.tasks, data.projects, range,
       { stepMinutes: Number(settings.stepMinutes), mode: settings.mode, scope: settings.scope }, filter);
-    exactSheet = C.buildTimesheet(data.tasks, data.projects, range, { stepMinutes: 0 }, filter);
+    exactSheet = C.buildHoursGrid(data.tasks, data.projects, range, { stepMinutes: 0 }, filter);
     renderEditBar();
     renderCharts();
     renderBalance();
@@ -447,7 +447,7 @@
     // Active leaf tasks that pass the tag filter and have no row yet, labelled "Project › Task".
     const shown = new Set(sheet.projects.flatMap((p) => p.rows.map((r) => r.taskId)));
     const candidates = data.tasks.filter((t) => data.activeIds.has(t.id) && !shown.has(t.id) && !(t.subTaskIds && t.subTaskIds.length));
-    const s = C.buildTimesheet(candidates.concat(data.tasks.filter((t) => t.subTaskIds && t.subTaskIds.length)), data.projects, range, {},
+    const s = C.buildHoursGrid(candidates.concat(data.tasks.filter((t) => t.subTaskIds && t.subTaskIds.length)), data.projects, range, {},
       { tagIds: settings.tagIds, includeTaskIds: candidates.map((t) => t.id) });
     addOptions = new Map();
     for (const p of s.projects) for (const r of p.rows) if (!shown.has(r.taskId)) addOptions.set(`${p.title} › ${r.title}`, r.taskId);
@@ -863,7 +863,7 @@
   function downloadCsv() {
     if (!sheet) return;
     const text = '﻿' + C.toDelimited(sheet, { sep: ';', decimal: settings.decimal, tagTitles: tagTitleMap() }); // BOM so Excel reads UTF-8
-    const name = `timesheet_${range.from}_${range.to}${fileSuffix()}.csv`;
+    const name = `hours-grid_${range.from}_${range.to}${fileSuffix()}.csv`;
     if (!api) { downloadInBrowser(name, text); return; } // standalone preview
     if (csvRequest) clearTimeout(csvRequest.timer);
     const id = `${Date.now()}-${Math.random().toString(36).slice(2)}`;

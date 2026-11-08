@@ -67,7 +67,7 @@
   }
 
   /**
-   * Build the timesheet.
+   * Build the hours grid.
    *
    * tasks:    active + archived tasks (duplicates by id are ignored)
    * projects: [{ id, title }]
@@ -83,7 +83,7 @@
    * Only leaf tasks are counted. In Super Productivity a parent task's time is the
    * sum of its subtasks, so counting both would double the hours.
    */
-  function buildTimesheet(tasks, projects, range, rounding = {}, filter = {}) {
+  function buildHoursGrid(tasks, projects, range, rounding = {}, filter = {}) {
     const { stepMinutes = 0, mode = 'up', scope = 'project-day' } = rounding;
     // Tasks the user added to the sheet to enter time: shown even with no time in the range.
     const include = new Set(filter.includeTaskIds || []);
@@ -164,7 +164,7 @@
 
   /**
    * Hours per project, exact and rounded side by side, for the donut charts.
-   * exactSheet: the same timesheet built with stepMinutes 0. Largest exact share first.
+   * exactSheet: the same grid built with stepMinutes 0. Largest exact share first.
    */
   function projectShares(roundedSheet, exactSheet) {
     const byId = new Map();
@@ -361,7 +361,7 @@
     weekRange,
     monthRange,
     roundMs,
-    buildTimesheet,
+    buildHoursGrid,
     projectShares,
     taskShares,
     parseClock,
@@ -376,5 +376,5 @@
   };
 
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
-  else root.TimesheetCore = api;
+  else root.HoursGridCore = api;
 })(typeof window !== 'undefined' ? window : globalThis);

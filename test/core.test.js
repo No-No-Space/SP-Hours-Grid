@@ -1,7 +1,7 @@
 'use strict';
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const C = require('../src/timesheet-core.js');
+const C = require('../src/hours-grid-core.js');
 
 const MIN = 60 * 1000;
 const H = 60 * MIN;
@@ -51,7 +51,7 @@ test('roundMs modes', () => {
 });
 
 test('scope project-day rounds the project total per day, not each task', () => {
-  const s = C.buildTimesheet(tasks, projects, range, { stepMinutes: 60, mode: 'up', scope: 'project-day' });
+  const s = C.buildHoursGrid(tasks, projects, range, { stepMinutes: 60, mode: 'up', scope: 'project-day' });
   const p1 = s.projects.find((p) => p.id === 'p1');
   assert.equal(p1.subtotal['2026-11-02'], H); // 60 min exact → 1 h
   assert.equal(p1.subtotal['2026-11-03'], 2 * H); // 70 min → 2 h
@@ -61,13 +61,13 @@ test('scope project-day rounds the project total per day, not each task', () => 
 });
 
 test('scope cell rounds every cell', () => {
-  const s = C.buildTimesheet(tasks, projects, range, { stepMinutes: 60, mode: 'up', scope: 'cell' });
+  const s = C.buildHoursGrid(tasks, projects, range, { stepMinutes: 60, mode: 'up', scope: 'cell' });
   const p1 = s.projects.find((p) => p.id === 'p1');
   assert.equal(p1.subtotal['2026-11-02'], 3 * H); // 3 × 20 min → 3 × 1 h
 });
 
 test('parents are skipped and subtasks carry the parent title and project', () => {
-  const s = C.buildTimesheet(tasks, projects, range, {});
+  const s = C.buildHoursGrid(tasks, projects, range, {});
   const p2 = s.projects.find((p) => p.id === 'p2');
   assert.equal(p2.rows.length, 1);
   assert.equal(p2.rows[0].title, 'Website › Fonts');
@@ -75,19 +75,19 @@ test('parents are skipped and subtasks carry the parent title and project', () =
 });
 
 test('out-of-range tasks are dropped, tasks without project are grouped', () => {
-  const s = C.buildTimesheet(tasks, projects, range, {});
+  const s = C.buildHoursGrid(tasks, projects, range, {});
   const ids = s.projects.flatMap((p) => p.rows.map((r) => r.taskId));
   assert.ok(!ids.includes('old'));
   assert.ok(s.projects.some((p) => p.id === C.NO_PROJECT_ID && p.title === 'No project'));
 });
 
 test('duplicates (active + archived) are counted once', () => {
-  const s = C.buildTimesheet([...tasks, tasks[0]], projects, range, {});
+  const s = C.buildHoursGrid([...tasks, tasks[0]], projects, range, {});
   assert.equal(s.projects.find((p) => p.id === 'p1').rows.length, 3);
 });
 
 test('grand total equals the sum of day totals', () => {
-  const s = C.buildTimesheet(tasks, projects, range, { stepMinutes: 30, mode: 'up' });
+  const s = C.buildHoursGrid(tasks, projects, range, { stepMinutes: 30, mode: 'up' });
   const sum = Object.values(s.dayTotals).reduce((a, b) => a + b, 0);
   assert.equal(s.grandTotal, sum);
 });
@@ -100,7 +100,7 @@ test('formatting', () => {
 });
 
 test('delimited export has header, rows, subtotals and total', () => {
-  const s = C.buildTimesheet(tasks, projects, range, { stepMinutes: 60, mode: 'up' });
+  const s = C.buildHoursGrid(tasks, projects, range, { stepMinutes: 60, mode: 'up' });
   const lines = C.toDelimited(s).split('\r\n');
   assert.equal(lines[0].split(';').length, 3 + 7 + 1);
   assert.ok(lines.some((l) => l.startsWith('Office — Hospital;Subtotal;')));
@@ -108,37 +108,37 @@ test('delimited export has header, rows, subtotals and total', () => {
 });
 
 test('tag filter keeps tasks with any selected tag, inheriting parent tags', () => {
-  const office = C.buildTimesheet(tasks, projects, range, {}, { tagIds: ['office'] });
+  const office = C.buildHoursGrid(tasks, projects, range, {}, { tagIds: ['office'] });
   assert.deepEqual(office.projects.flatMap((p) => p.rows.map((r) => r.taskId)).sort(), ['a', 'b']);
-  const freelance = C.buildTimesheet(tasks, projects, range, {}, { tagIds: ['freelance'] });
+  const freelance = C.buildHoursGrid(tasks, projects, range, {}, { tagIds: ['freelance'] });
   assert.deepEqual(freelance.projects.flatMap((p) => p.rows.map((r) => r.taskId)), ['sub']);
-  const both = C.buildTimesheet(tasks, projects, range, {}, { tagIds: ['office', 'freelance'] });
+  const both = C.buildHoursGrid(tasks, projects, range, {}, { tagIds: ['office', 'freelance'] });
   assert.equal(both.projects.flatMap((p) => p.rows).length, 3);
 });
 
 test('rounding applies to the filtered set only', () => {
   // Office on 2 Nov: a + b = 40 min → 1 h; untagged c is excluded.
-  const s = C.buildTimesheet(tasks, projects, range, { stepMinutes: 60, mode: 'up' }, { tagIds: ['office'] });
+  const s = C.buildHoursGrid(tasks, projects, range, { stepMinutes: 60, mode: 'up' }, { tagIds: ['office'] });
   assert.equal(s.projects.find((p) => p.id === 'p1').subtotal['2026-11-02'], H);
   assert.equal(s.grandTotal, H);
 });
 
 test('the Today tag is neither a filter nor shown on rows', () => {
-  const onlyToday = C.buildTimesheet(tasks, projects, range, {}, { tagIds: ['TODAY'] });
+  const onlyToday = C.buildHoursGrid(tasks, projects, range, {}, { tagIds: ['TODAY'] });
   assert.equal(onlyToday.projects.flatMap((p) => p.rows).length, 5); // treated as no filter
   const row = onlyToday.projects.flatMap((p) => p.rows).find((r) => r.taskId === 'b');
   assert.deepEqual(row.tagIds, ['office']);
 });
 
 test('export has a Tags column with titles', () => {
-  const s = C.buildTimesheet(tasks, projects, range, {}, { tagIds: ['office'] });
+  const s = C.buildHoursGrid(tasks, projects, range, {}, { tagIds: ['office'] });
   const lines = C.toDelimited(s, { tagTitles: { office: 'Office' } }).split('\r\n');
   assert.ok(lines.some((l) => l.startsWith('Office — Hospital;Clash check;Office;')));
 });
 
 test('projectShares pairs exact and rounded totals per project, largest first', () => {
-  const r = C.buildTimesheet(tasks, projects, range, { stepMinutes: 60, mode: 'up' });
-  const e = C.buildTimesheet(tasks, projects, range, { stepMinutes: 0 });
+  const r = C.buildHoursGrid(tasks, projects, range, { stepMinutes: 60, mode: 'up' });
+  const e = C.buildHoursGrid(tasks, projects, range, { stepMinutes: 0 });
   const shares = C.projectShares(r, e);
   assert.equal(shares[0].id, 'p1');
   assert.deepEqual({ exact: shares[0].exact, rounded: shares[0].rounded }, { exact: 130 * MIN, rounded: 3 * H });
@@ -200,8 +200,8 @@ test('formatSigned', () => {
 });
 
 test('taskShares, project-day scope: tasks exact, rounding reported once for the project', () => {
-  const r = C.buildTimesheet(tasks, projects, range, { stepMinutes: 60, mode: 'up', scope: 'project-day' });
-  const e = C.buildTimesheet(tasks, projects, range, { stepMinutes: 0 });
+  const r = C.buildHoursGrid(tasks, projects, range, { stepMinutes: 60, mode: 'up', scope: 'project-day' });
+  const e = C.buildHoursGrid(tasks, projects, range, { stepMinutes: 0 });
   const t = C.taskShares(r, e, 'p1');
   assert.equal(t.perTask, false);
   assert.deepEqual(t.tasks.map((x) => x.id), ['c', 'a', 'b']); // largest first, then by title
@@ -213,8 +213,8 @@ test('taskShares, project-day scope: tasks exact, rounding reported once for the
 });
 
 test('taskShares, cell scope: every task has its own rounded hours', () => {
-  const r = C.buildTimesheet(tasks, projects, range, { stepMinutes: 60, mode: 'up', scope: 'cell' });
-  const e = C.buildTimesheet(tasks, projects, range, { stepMinutes: 0 });
+  const r = C.buildHoursGrid(tasks, projects, range, { stepMinutes: 60, mode: 'up', scope: 'cell' });
+  const e = C.buildHoursGrid(tasks, projects, range, { stepMinutes: 0 });
   const t = C.taskShares(r, e, 'p1');
   assert.equal(t.perTask, true);
   assert.equal(t.tasks.find((x) => x.id === 'c').rounded, 3 * H); // 20 min → 1 h, 70 min → 2 h
@@ -249,10 +249,10 @@ test('setDayTime sets or removes one day without mutating', () => {
 });
 
 test('includeTaskIds shows a task with no time in the range, still honouring the tag filter', () => {
-  const s = C.buildTimesheet(tasks, projects, range, {}, { includeTaskIds: ['old'] });
+  const s = C.buildHoursGrid(tasks, projects, range, {}, { includeTaskIds: ['old'] });
   const row = s.projects.find((p) => p.id === 'p2').rows.find((r) => r.taskId === 'old');
   assert.ok(row);
   assert.equal(row.total, 0);
-  const filtered = C.buildTimesheet(tasks, projects, range, {}, { includeTaskIds: ['old'], tagIds: ['office'] });
+  const filtered = C.buildHoursGrid(tasks, projects, range, {}, { includeTaskIds: ['old'], tagIds: ['office'] });
   assert.ok(!filtered.projects.flatMap((p) => p.rows).some((r) => r.taskId === 'old'));
 });
