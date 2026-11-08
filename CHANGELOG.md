@@ -4,7 +4,7 @@ All notable changes to this plugin. Versions follow the `version` in `src/manife
 
 ## 0.4.0 — 2026-11-08
 
-- **Renamed to Hours Grid**, id `hours-grid` (was *Timesheets*, `sp-timesheets`), so it is not confused with the *Timesheet* plugin already in the community list. Super Productivity sees it as a new plugin: uninstall the old one and set the settings again.
+- **Renamed to Hours Grid**, id `hours-grid` (was *Timesheets*, `sp-timesheets`), so it is not confused with the *Timesheet* plugin already in the community list. Super Productivity sees it as a new plugin: uninstall the old one and set the settings again. The repository is now `No-No-Space/SP-Hours-Grid`; GitHub redirects the old `SP-Timesheets` links.
 - **CSV export works inside Super Productivity.** Plugin iframes are sandboxed without downloads, so the old button did nothing in the app while still saying "Saved". The view now posts the CSV to a new `plugin.js`, which saves it with `PluginAPI.downloadFile` and reports back; the status line says "Saved" only after that, and shows an error otherwise.
 - New permission: `downloadFile`, used only for the CSV.
 

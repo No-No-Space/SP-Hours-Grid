@@ -42,7 +42,7 @@ It reads the per-day time Super Productivity already records on every task (`tim
 ## Install
 
 - **From the app** (once listed): **Settings → Plugins → Community Plugins → Hours Grid → Install**.
-- **By hand**: download `hours-grid-<version>.zip` from [Releases](https://github.com/No-No-Space/SP-Timesheets/releases) and upload it under **Settings → Plugins**.
+- **By hand**: download `hours-grid-<version>.zip` from [Releases](https://github.com/No-No-Space/SP-Hours-Grid/releases) and upload it under **Settings → Plugins**.
 - **From source**: `npm run build` (Node 18+, no dependencies) and upload `dist/hours-grid-<version>.zip`.
 
 Then open **Hours Grid** from the plugin menu.

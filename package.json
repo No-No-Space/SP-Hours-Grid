@@ -1,5 +1,5 @@
 {
-  "name": "sp-timesheets",
+  "name": "hours-grid",
   "version": "0.4.0",
   "description": "Hours Grid, a Super Productivity plugin: grid of tasks × days, grouped by project, with configurable rounding.",
   "private": true,
@@ -10,11 +10,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/No-No-Space/SP-Timesheets.git"
+    "url": "git+https://github.com/No-No-Space/SP-Hours-Grid.git"
   },
-  "homepage": "https://github.com/No-No-Space/SP-Timesheets#readme",
+  "homepage": "https://github.com/No-No-Space/SP-Hours-Grid#readme",
   "bugs": {
-    "url": "https://github.com/No-No-Space/SP-Timesheets/issues"
+    "url": "https://github.com/No-No-Space/SP-Hours-Grid/issues"
   },
   "type": "commonjs",
   "scripts": {
