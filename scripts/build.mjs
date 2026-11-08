@@ -1,5 +1,5 @@
 // Build the installable plugin ZIP. No dependencies — Node 18+.
-//   node scripts/build.mjs   →   dist/plugin/*  and  dist/sp-timesheets-<version>.zip
+//   node scripts/build.mjs   →   dist/plugin/*  and  dist/hours-grid-<version>.zip
 // Super Productivity loads index.html into an iframe that cannot fetch sibling files,
 // so the calculation core is inlined into index.html here.
 import { readFileSync, writeFileSync, mkdirSync, rmSync } from 'node:fs';
@@ -25,6 +25,7 @@ mkdirSync(out, { recursive: true });
 const files = {
   'manifest.json': JSON.stringify(manifest, null, 2) + '\n',
   'index.html': html,
+  'plugin.js': readFileSync(join(src, 'plugin.js'), 'utf8'),
   'icon.svg': readFileSync(join(src, 'icon.svg'), 'utf8'),
 };
 for (const [name, body] of Object.entries(files)) writeFileSync(join(out, name), body);
@@ -75,7 +76,7 @@ function zip(entries) {
   return Buffer.concat([...locals, cd, end]);
 }
 
-const zipName = `sp-timesheets-${manifest.version}.zip`;
+const zipName = `hours-grid-${manifest.version}.zip`;
 const zipBuf = zip(files);
 const sha256 = createHash('sha256').update(zipBuf).digest('hex');
 writeFileSync(join(dist, zipName), zipBuf);

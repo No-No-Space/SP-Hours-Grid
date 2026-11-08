@@ -1,7 +1,7 @@
 # Releasing and the community listing
 
 > Created: 2026-11-01 / by Aksel Alvarez Jurgueson & Claude
-> Last updated: 2026-11-01 / by Claude
+> Last updated: 2026-11-08 / by Claude
 
 Super Productivity lists community plugins from [`src/assets/community-plugins.json`](https://github.com/super-productivity/super-productivity/blob/master/src/assets/community-plugins.json), which ships with the app. Getting listed, and every update after that, is a pull request to that file. The rules are in the [plugin development guide](https://github.com/super-productivity/super-productivity/blob/master/docs/plugin-development.md#get-listed-in-the-app).
 
@@ -15,7 +15,7 @@ Super Productivity lists community plugins from [`src/assets/community-plugins.j
    git tag v0.2.0
    git push origin main v0.2.0
    ```
-5. The *Release* workflow tests, builds, and publishes a GitHub release with `sp-timesheets-<version>.zip`, its `.sha256`, and — in the release notes — the ready-made entry for `community-plugins.json`.
+5. The *Release* workflow tests, builds, and publishes a GitHub release with `hours-grid-<version>.zip`, its `.sha256`, and — in the release notes — the ready-made entry for `community-plugins.json`.
 
 The build is reproducible: the same sources give the same ZIP bytes, so `npm run build && npm run listing` locally prints the same `sha256` as CI. If they differ, check line endings (`.gitattributes` forces LF).
 
@@ -32,4 +32,4 @@ Open a PR to the same file that changes `release.version`, `release.downloadUrl`
 
 ## What the listing does and does not mean
 
-A listing is not a code review: the app only checks that the downloaded ZIP matches the hash. This plugin keeps its review surface small on purpose — no `plugin.js`, no network access, no `nodeExecution`, no `postMessage` listeners; it reads tasks, projects, tags and the schedule settings, stores its own settings, and writes only a task's `timeSpentOnDay` when the user edits a cell.
+A listing is not a code review: the app only checks that the downloaded ZIP matches the hash. This plugin keeps its review surface small on purpose — no network access, no `nodeExecution`, no hooks; it reads tasks, projects, tags and the schedule settings, stores its own settings, and writes only a task's `timeSpentOnDay` when the user edits a cell. Its only `plugin.js` code is a `message` listener that saves the CSV from its own iframe with `downloadFile` (iframes are sandboxed without downloads).

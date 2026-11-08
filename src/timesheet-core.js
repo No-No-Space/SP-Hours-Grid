@@ -1,5 +1,5 @@
 /*
- * SP-Timesheets — calculation core.
+ * Hours Grid — calculation core.
  * Pure functions, no DOM and no PluginAPI, so they can be unit-tested in Node
  * and inlined into index.html by the build script.
  */

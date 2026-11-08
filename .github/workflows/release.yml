@@ -30,7 +30,7 @@ jobs:
       - name: Listing entry for community-plugins.json
         run: |
           {
-            echo "Install: Super Productivity → Settings → Plugins → upload \`sp-timesheets-${GITHUB_REF_NAME#v}.zip\`."
+            echo "Install: Super Productivity → Settings → Plugins → upload \`hours-grid-${GITHUB_REF_NAME#v}.zip\`."
             echo
             echo "Entry for \`src/assets/community-plugins.json\` in super-productivity:"
             echo

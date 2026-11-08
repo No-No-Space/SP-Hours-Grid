@@ -2,6 +2,12 @@
 
 All notable changes to this plugin. Versions follow the `version` in `src/manifest.json`.
 
+## 0.4.0 — 2026-11-08
+
+- **Renamed to Hours Grid**, id `hours-grid` (was *Timesheets*, `sp-timesheets`), so it is not confused with the *Timesheet* plugin already in the community list. Super Productivity sees it as a new plugin: uninstall the old one and set the settings again.
+- **CSV export works inside Super Productivity.** Plugin iframes are sandboxed without downloads, so the old button did nothing in the app while still saying "Saved". The view now posts the CSV to a new `plugin.js`, which saves it with `PluginAPI.downloadFile` and reports back; the status line says "Saved" only after that, and shows an error otherwise.
+- New permission: `downloadFile`, used only for the CSV.
+
 ## 0.3.0 — 2026-11-02
 
 - Donut charts of hours per project, exact and rounded side by side, with a legend showing what rounding adds per project.

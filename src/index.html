@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Timesheets</title>
+<title>Hours Grid</title>
 <style>
   /* Colours come from the theme variables Super Productivity injects into plugin iframes,
      so the table follows whichever theme the app uses. Fallbacks are for standalone preview. */
@@ -131,7 +131,7 @@
 </style>
 </head>
 <body>
-<h1>Timesheets</h1>
+<h1>Hours Grid</h1>
 
 <div class="bar">
   <div class="field"><span>Range</span>
@@ -286,12 +286,12 @@
     try {
       const raw = await api.loadSyncedData();
       if (raw) settings = { ...DEFAULTS, ...JSON.parse(raw) };
-    } catch (e) { console.warn('[SP-Timesheets] could not load settings', e); }
+    } catch (e) { console.warn('[Hours Grid] could not load settings', e); }
   }
   async function saveSettings() {
     if (!api || !api.persistDataSynced) return;
     try { await api.persistDataSynced(JSON.stringify(settings)); }
-    catch (e) { console.warn('[SP-Timesheets] could not save settings', e); }
+    catch (e) { console.warn('[Hours Grid] could not save settings', e); }
   }
 
   // ---------- data ----------
@@ -329,7 +329,7 @@
     try {
       const state = await api.getAppState();
       return (state && state.globalConfig && state.globalConfig.schedule) || null;
-    } catch (e) { console.warn('[SP-Timesheets] could not read the work schedule', e); return null; }
+    } catch (e) { console.warn('[Hours Grid] could not read the work schedule', e); return null; }
   }
 
   // ---------- range ----------
@@ -840,12 +840,48 @@
       status(ok ? 'Copied. Paste into Excel or Sheets.' : 'Could not copy to the clipboard.');
     }
   }
+  // Inside Super Productivity the iframe is sandboxed without downloads, so the CSV is
+  // posted to this plugin's plugin.js, which saves it from the app and replies.
+  const CSV_MSG = { download: 'HOURS_GRID_DOWNLOAD', ack: 'HOURS_GRID_DOWNLOAD_ACK', result: 'HOURS_GRID_DOWNLOAD_RESULT' };
+  const CSV_ACK_TIMEOUT_MS = 5000;
+  let csvRequest = null; // { id, name, timer } while an export is in flight
+
+  window.addEventListener('message', (e) => {
+    // Only replies from the app window to the request in flight.
+    const m = e.data;
+    if (e.source !== window.parent || !m || !csvRequest || m.requestId !== csvRequest.id) return;
+    if (m.type === CSV_MSG.ack) {
+      clearTimeout(csvRequest.timer);
+      status(`Saving ${csvRequest.name}…`);
+    } else if (m.type === CSV_MSG.result) {
+      clearTimeout(csvRequest.timer);
+      status(m.ok ? `Saved ${csvRequest.name}` : 'Could not save the CSV: ' + (m.error || 'unknown error'));
+      csvRequest = null;
+    }
+  });
+
   function downloadCsv() {
     if (!sheet) return;
     const text = '﻿' + C.toDelimited(sheet, { sep: ';', decimal: settings.decimal, tagTitles: tagTitleMap() }); // BOM so Excel reads UTF-8
+    const name = `timesheet_${range.from}_${range.to}${fileSuffix()}.csv`;
+    if (!api) { downloadInBrowser(name, text); return; } // standalone preview
+    if (csvRequest) clearTimeout(csvRequest.timer);
+    const id = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    csvRequest = {
+      id, name,
+      timer: setTimeout(() => {
+        csvRequest = null;
+        status('Could not save the CSV: the plugin did not answer. Try disabling and enabling Hours Grid under Settings → Plugins. Copy still works.');
+      }, CSV_ACK_TIMEOUT_MS),
+    };
+    status(`Saving ${name}…`);
+    window.parent.postMessage({ type: CSV_MSG.download, requestId: id, filename: name, data: text }, '*');
+  }
+
+  // Preview outside Super Productivity: a normal browser download works there.
+  function downloadInBrowser(name, text) {
     const url = URL.createObjectURL(new Blob([text], { type: 'text/csv;charset=utf-8' }));
     const a = document.createElement('a');
-    const name = `timesheet_${range.from}_${range.to}${fileSuffix()}.csv`;
     a.href = url; a.download = name;
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1000);

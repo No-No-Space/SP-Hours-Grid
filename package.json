@@ -1,7 +1,7 @@
 {
   "name": "sp-timesheets",
-  "version": "0.3.0",
-  "description": "Super Productivity plugin: timesheet table of tasks × days, grouped by project, with configurable rounding.",
+  "version": "0.4.0",
+  "description": "Hours Grid, a Super Productivity plugin: grid of tasks × days, grouped by project, with configurable rounding.",
   "private": true,
   "license": "MIT",
   "author": {

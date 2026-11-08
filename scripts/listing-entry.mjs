@@ -12,13 +12,13 @@ const manifest = JSON.parse(readFileSync(join(root, 'src', 'manifest.json'), 'ut
 const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
 
 const repo = pkg.repository.url.replace(/^git\+/, '').replace(/\.git$/, '');
-const zipName = `sp-timesheets-${manifest.version}.zip`;
+const zipName = `hours-grid-${manifest.version}.zip`;
 const sha256 = createHash('sha256').update(readFileSync(join(root, 'dist', zipName))).digest('hex');
 
 const entry = {
-  name: 'Timesheets',
+  name: 'Hours Grid',
   shortDescription:
-    'Timesheet table of tracked time: tasks grouped by project × days, tag filter, rounding to 15/30/60 min, CSV export.',
+    'Task × day grid of tracked hours, grouped by project, with 15/30/60-min rounding, tag filter and copy/CSV export for reporting.',
   url: repo,
   author: pkg.author.name,
   authorUrl: pkg.author.url,

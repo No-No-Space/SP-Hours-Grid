@@ -1,14 +1,14 @@
-# SP-Timesheets
+# Hours Grid
 
 > Created: 2026-11-01 / by Aksel Alvarez Jurgueson & Claude
-> Last updated: 2026-11-02 / by Claude
-> Version: v0.3.0
+> Last updated: 2026-11-08 / by Claude
+> Version: v0.4.0
 
-A [Super Productivity](https://super-productivity.com) plugin that shows tracked time as a timesheet: **tasks grouped by project in rows, days in columns**, with a tag filter, configurable rounding and export to CSV or the clipboard.
+**Hours Grid** is a [Super Productivity](https://super-productivity.com) plugin that shows tracked time as a grid: **tasks grouped by project in rows, days in columns**, with a tag filter, configurable rounding and export to CSV or the clipboard.
 
 It reads the per-day time Super Productivity already records on every task (`timeSpentOnDay`), so nothing extra has to be tracked.
 
-![Timesheets: projects with daily subtotals, tasks below, days in columns, rounded to the hour](docs/screenshot.png)
+![Hours Grid: projects with daily subtotals, tasks below, days in columns, rounded to the hour](docs/screenshot.png)
 
 ## Features
 
@@ -21,7 +21,7 @@ It reads the per-day time Super Productivity already records on every task (`tim
   - **Project per day** (default) — task rows show exact time; each project's daily total is rounded. Three 20-minute tasks on one day bill as 1 h.
   - **Each task per day** — every cell is rounded and subtotals are sums of rounded cells. The same three tasks bill as 3 h.
 - Decimal hours (comma or point) or h:mm.
-- **Copy** puts a tab-separated table on the clipboard (pastes straight into Excel); **CSV** saves a `;`-separated file with a UTF-8 BOM, which Swedish-locale Excel opens correctly.
+- **Copy** puts a tab-separated table on the clipboard (pastes straight into Excel); **CSV** saves a `;`-separated file with a UTF-8 BOM, which Swedish-locale Excel opens correctly. The view hands the file to the plugin's `plugin.js`, which saves it through Super Productivity, because plugin views cannot download files themselves.
 - **Edit time in the table**: turn on **Edit time**, click a task cell (or focus it and start typing) and enter the hours — `1,5`, `1.5`, `1:30`, `45m`, `1h 30m`. Enter saves, Tab saves and moves to the next day, Esc cancels; an empty cell or `0` removes that day's time. The change is saved to the task in Super Productivity right away, which also updates the task's total and its parent's time. **Undo** reverts the last changes one by one. To log time on a task that has none in the period, pick it under *Add a task with no time in this period*. Archived tasks are read-only. Edit mode is off every time the plugin opens.
 - **Hours per project**: donut charts below the table, one for exact tracked time and one for rounded time, with a legend that shows each project's hours, share and how much rounding adds. Click a segment or a project name to see that project's tasks; *All projects* or Esc goes back. With *Each task per day* every task has its own rounded hours; with *Project per day* rounding belongs to the project's daily total, so it shows as one grey *Added by rounding* slice.
 - **Work time vs target**: one card per week with hours worked, the weekly target and the plus or minus balance, plus worked / target / ± for every day. A week in progress is compared with the target up to and including today, and shows how many hours are left. Month and custom ranges show one card per (partial) week and a total for the range.
@@ -41,15 +41,17 @@ It reads the per-day time Super Productivity already records on every task (`tim
 
 ## Install
 
-- **From the app** (once listed): **Settings → Plugins → Community Plugins → Timesheets → Install**.
-- **By hand**: download `sp-timesheets-<version>.zip` from [Releases](https://github.com/No-No-Space/SP-Timesheets/releases) and upload it under **Settings → Plugins**.
-- **From source**: `npm run build` (Node 18+, no dependencies) and upload `dist/sp-timesheets-<version>.zip`.
+- **From the app** (once listed): **Settings → Plugins → Community Plugins → Hours Grid → Install**.
+- **By hand**: download `hours-grid-<version>.zip` from [Releases](https://github.com/No-No-Space/SP-Timesheets/releases) and upload it under **Settings → Plugins**.
+- **From source**: `npm run build` (Node 18+, no dependencies) and upload `dist/hours-grid-<version>.zip`.
 
-Then open **Timesheets** from the plugin menu.
+Then open **Hours Grid** from the plugin menu.
+
+> **Upgrading from SP-Timesheets 0.3.0 or earlier:** the plugin was renamed and its id changed from `sp-timesheets` to `hours-grid`, so Super Productivity treats it as a new plugin. Uninstall the old one; its settings (range, rounding, tags, work days) have to be set again once.
 
 ## Privacy and permissions
 
-The plugin is a single `index.html` running in Super Productivity's plugin iframe. It has no `plugin.js`, makes no network requests and does not use `nodeExecution`. It reads tasks (active and archived), projects, tags and the work hours from Super Productivity's schedule settings (through `getAppState`), and stores only its own settings with `persistDataSynced`. It writes to a task only when you change a cell in **Edit time** mode, and then only that task's `timeSpentOnDay` (through `updateTask`).
+The UI is an `index.html` running in Super Productivity's plugin iframe. A small `plugin.js` does one thing only: it receives the CSV from that view and saves it with `downloadFile`. It accepts messages only from this plugin's own iframe, only `.csv` file names without paths, and removes its listener when the plugin unloads. The plugin makes no network requests and does not use `nodeExecution`. It reads tasks (active and archived), projects, tags and the work hours from Super Productivity's schedule settings (through `getAppState`), and stores only its own settings with `persistDataSynced`. It writes to a task only when you change a cell in **Edit time** mode, and then only that task's `timeSpentOnDay` (through `updateTask`).
 
 ## Develop
 
@@ -57,10 +59,12 @@ The plugin is a single `index.html` running in Super Productivity's plugin ifram
 src/
   manifest.json        plugin manifest
   index.html           UI (loads the core with <script src>, inlined at build time)
+  plugin.js            host side: saves the CSV the view sends (iframes cannot download)
   timesheet-core.js    pure calculation functions — aggregation, rounding, export
   icon.svg
 test/core.test.js      node:test unit tests for the core
 test/manifest.test.js  manifest checks the community listing relies on
+test/plugin.test.js    plugin.js: accepts only its own view, valid names, saves via downloadFile
 scripts/build.mjs      inlines the core, writes dist/plugin/, the ZIP and its .sha256
 scripts/listing-entry.mjs  prints the community-plugins.json entry
 ```

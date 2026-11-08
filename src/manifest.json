@@ -1,13 +1,13 @@
 {
-  "id": "sp-timesheets",
-  "name": "Timesheets",
-  "version": "0.3.0",
-  "description": "Timesheet table: tasks grouped by project in rows, days in columns, with tag filter, configurable rounding, project donuts, hours vs weekly target, editable time and CSV export.",
+  "id": "hours-grid",
+  "name": "Hours Grid",
+  "version": "0.4.0",
+  "description": "Task × day grid of tracked hours, grouped by project, with 15/30/60-min rounding, tag filter, project donuts, hours vs weekly target, editable time, and copy/CSV export for reporting.",
   "manifestVersion": 1,
   "minSupVersion": "19.3.1",
   "icon": "icon.svg",
   "iFrame": true,
   "sidePanel": false,
-  "permissions": ["getTasks", "getArchivedTasks", "getAllProjects", "getAllTags", "persistDataSynced", "loadSyncedData", "getAppState", "updateTask"],
+  "permissions": ["getTasks", "getArchivedTasks", "getAllProjects", "getAllTags", "persistDataSynced", "loadSyncedData", "getAppState", "updateTask", "downloadFile"],
   "hooks": []
 }
