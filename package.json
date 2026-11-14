@@ -1,6 +1,6 @@
 {
   "name": "hours-grid",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Hours Grid, a Super Productivity plugin: grid of tasks × days, grouped by project, with configurable rounding.",
   "private": true,
   "license": "MIT",

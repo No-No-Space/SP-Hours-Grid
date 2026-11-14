@@ -2,7 +2,7 @@
 
 All notable changes to this plugin. Versions follow the `version` in `src/manifest.json`.
 
-## Unreleased
+## 0.4.1 — 2026-11-14
 
 - **New icon** (`grid-add-26` from Zendesk Garden, Apache 2.0). The old outline icon showed as a filled black square in the Super Productivity menu; the new one is drawn with fills, so it follows the theme colour.
 - **Settings grouped at the top**: Period, Rounding, Units, Tasks (tag filter) and Work target, each in its own labelled box. The work schedule is no longer hidden at the bottom. Edit time, Copy, CSV and Refresh sit next to the title.
