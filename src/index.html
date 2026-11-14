@@ -32,28 +32,100 @@
   button:hover { border-color: var(--ts-accent); }
   button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--ts-accent); outline-offset: 1px; }
   .group { display: flex; gap: 4px; }
-  .wrap { overflow-x: auto; background: var(--ts-card); border: 1px solid var(--ts-line); border-radius: 8px; }
-  table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+
+  /* top bar: title + actions */
+  .top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--ts-gap);
+         margin-bottom: calc(var(--ts-gap) * 1.5); }
+  .top h1 { margin: 0; }
+  .actions { display: flex; flex-wrap: wrap; gap: var(--ts-gap); align-items: center; }
+
+  /* settings: one card per group */
+  .settings { display: flex; flex-wrap: wrap; gap: var(--ts-gap); margin-bottom: calc(var(--ts-gap) * 2); align-items: stretch; }
+  .set { margin: 0; min-width: 0; padding: 4px calc(var(--ts-gap) * 1.5) calc(var(--ts-gap) * 1.25);
+         border: 1px solid var(--ts-line); border-radius: 8px; background: var(--ts-card);
+         display: flex; flex-direction: column; gap: var(--ts-gap); flex: 0 1 auto; }
+  .set legend { padding: 0 4px; margin-left: -4px; font-size: 11px; font-weight: 700; letter-spacing: .06em;
+                text-transform: uppercase; color: var(--ts-muted); }
+  .set .row { display: flex; flex-wrap: wrap; gap: var(--ts-gap); align-items: end; }
+  .set-filter { max-width: 520px; }
+  .days-chips .chip { padding: 2px 8px; font-size: 12px; }
+
+  /* tag filter: a button that opens a list; only the selected tags stay on screen */
+  .tagpick { position: relative; align-self: flex-start; }
+  .tagbtn { display: inline-flex; gap: 6px; align-items: center; }
+  .tagbtn[aria-expanded=true] { border-color: var(--ts-accent); }
+  .tagpop { position: absolute; z-index: 20; top: calc(100% + 4px); left: 0; width: 280px; max-width: calc(100vw - 32px);
+            background: var(--ts-card); border: 1px solid var(--ts-line); border-radius: 8px; padding: var(--ts-gap);
+            box-shadow: 0 8px 24px rgb(0 0 0 / .25); display: flex; flex-direction: column; gap: 6px; }
+  .tagpop input[type=search] { width: 100%; }
+  .taglist { max-height: 280px; overflow-y: auto; display: flex; flex-direction: column; }
+  .tagopt { display: flex; align-items: center; gap: 8px; padding: 4px 6px; border-radius: 4px; cursor: pointer; }
+  .tagopt:hover { background: var(--ts-sub); }
+  .tagopt input { margin: 0; accent-color: var(--ts-accent); }
+  .tagopt .dot, .chip .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--dot, var(--ts-muted)); flex: none; }
+  .tagpop-foot { display: flex; justify-content: space-between; align-items: center; gap: var(--ts-gap);
+                 border-top: 1px solid var(--ts-line); padding-top: 6px; font-size: 12px; }
+  .hint { font-size: 12px; color: var(--ts-muted); }
+  .chip.sel { border-color: var(--ts-accent); background: var(--ts-sub); font-weight: 600; padding-right: 6px; }
+  .chip.sel .x { margin-left: 2px; color: var(--ts-muted); font-weight: 400; }
+  .chip.sel:hover .x { color: var(--ts-text); }
+
+  /* the grid. It scrolls inside its own box so the day header, the task column and the
+     total row stay in view however long or wide the table gets. */
+  .wrap { overflow: auto; max-height: calc(100vh - var(--ts-gap) * 4); width: fit-content; max-width: 100%;
+          background: var(--ts-card); border: 1px solid var(--ts-line); border-radius: 8px; }
+  #sheet { --task-w: 380px; --day-w: 66px; --total-w: 74px; }
+  table { border-collapse: separate; border-spacing: 0; font-variant-numeric: tabular-nums; }
+  #sheet table { table-layout: fixed; width: calc(var(--task-w) + var(--days) * var(--day-w) + var(--total-w)); }
+  #sheet th { width: var(--day-w); }
+  #sheet th:first-child { width: var(--task-w); }
+  #sheet th.total { width: var(--total-w); }
   th, td { padding: 4px 8px; border-bottom: 1px solid var(--ts-line); white-space: nowrap; }
-  th { font-weight: 600; text-align: right; position: sticky; top: 0; background: var(--ts-card); }
+  th { font-weight: 600; text-align: right; background: var(--ts-card); }
+  #sheet thead th { position: sticky; top: 0; z-index: 2; }
   th:first-child, td:first-child { text-align: left; white-space: normal; min-width: 220px; }
+  #sheet th:first-child, #sheet td:first-child { min-width: 0; overflow-wrap: anywhere; position: sticky; left: 0; z-index: 1;
+         background-color: var(--ts-card); box-shadow: inset -1px 0 0 var(--ts-line); }
+  #sheet thead th:first-child { z-index: 3; }
   td { text-align: right; }
-  th.weekend, td.weekend { background: color-mix(in srgb, var(--ts-text) 4%, transparent); }
+  /* weekend tint is an overlay, so sticky cells keep their solid background */
+  th.weekend, td.weekend { background-image: linear-gradient(var(--ts-wk), var(--ts-wk)); }
+  :root { --ts-wk: color-mix(in srgb, var(--ts-text) 4%, transparent); }
   th.today { color: var(--ts-accent); }
-  tr.project td { font-weight: 600; background: var(--ts-sub); }
-  tr.task td:first-child { padding-left: 24px; }
+  tr.project td, #sheet tr.project td:first-child { font-weight: 600; background-color: var(--ts-sub); }
+  tr.task td:first-child { padding-left: 28px; }
   tr.task.done td:first-child { color: var(--ts-muted); }
   tr.task td.exact { color: var(--ts-muted); }
   tr.grand td { font-weight: 700; border-top: 2px solid var(--ts-text); border-bottom: 0; }
+  #sheet tr.grand td { position: sticky; bottom: 0; z-index: 1; background-color: var(--ts-card); }
+  #sheet tr.grand td:first-child { z-index: 2; }
   td.total, th.total { border-left: 1px solid var(--ts-line); }
+
+  /* collapsible projects */
+  .proj { display: inline-flex; align-items: flex-start; gap: 6px; border: 0; background: none; padding: 0; font-weight: inherit;
+          text-align: left; border-radius: 4px; }
+  .proj .chev { width: 12px; height: 12px; margin-top: 3px; flex: none; transition: transform .12s; color: var(--ts-muted); }
+  .proj[aria-expanded=false] .chev { transform: rotate(-90deg); }
+  .proj:hover .chev { color: var(--ts-accent); }
+  .proj-count { margin-left: 6px; font-size: 11px; font-weight: 400; color: var(--ts-muted); }
+  .head-task { display: flex; align-items: baseline; justify-content: space-between; gap: var(--ts-gap); padding-right: 6px; }
+  .tiny { font-size: 11px; font-weight: 400; color: var(--ts-muted); }
+
+  /* drag the edge of the task column to resize it */
+  .col-grip { position: absolute; top: 0; bottom: 0; right: -4px; width: 9px; cursor: col-resize; z-index: 4;
+              touch-action: none; border-radius: 2px; }
+  .col-grip::after { content: ''; position: absolute; top: 20%; bottom: 20%; left: 4px; width: 1px; background: transparent; }
+  .col-grip:hover::after, .col-grip:focus-visible::after, .col-grip.dragging::after { background: var(--ts-accent); width: 2px; left: 3px; top: 0; bottom: 0; }
+  .col-grip:focus-visible { outline: none; }
+  body.resizing { cursor: col-resize; user-select: none; }
   .day-name { display: block; font-size: 11px; font-weight: 400; color: var(--ts-muted); }
   .note { margin-top: var(--ts-gap); font-size: 12px; color: var(--ts-muted); }
   .empty { padding: calc(var(--ts-gap) * 3); text-align: center; color: var(--ts-muted); }
   .chips { display: flex; flex-wrap: wrap; gap: 4px; }
+  .chips:empty { display: none; }
   .chip { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border: 1px solid var(--ts-line);
           border-radius: 999px; background: var(--ts-card); cursor: pointer; user-select: none; }
   .chip input { position: absolute; opacity: 0; pointer-events: none; }
-  .chip .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--dot, var(--ts-muted)); }
   .chip:has(input:checked) { border-color: var(--ts-accent); background: var(--ts-sub); font-weight: 600; }
   .chip:has(input:focus-visible) { outline: 2px solid var(--ts-accent); outline-offset: 1px; }
   .row-tags { margin-left: 6px; font-size: 11px; color: var(--ts-muted); }
@@ -94,12 +166,29 @@
   td.cell-edit.exact { color: var(--ts-text); }
   td.cell-edit.saving { opacity: .5; }
   td.locked { cursor: not-allowed; }
-  td .cell-input { width: 5.5em; padding: 1px 4px; text-align: right; border-color: var(--ts-accent); }
+  td .cell-input { width: 100%; padding: 1px 4px; text-align: right; border-color: var(--ts-accent); }
   tr.task.added td:first-child::after { content: 'added'; margin-left: 6px; font-size: 11px; color: var(--ts-accent); }
   .legend tr.done td:first-child { color: var(--ts-muted); }
-  .seg { transition: stroke-width .12s; }
+  .seg { transition: stroke-width .12s, opacity .12s; }
   .seg.drill { cursor: pointer; }
-  .seg.drill:hover { stroke-width: 20px; }
+  .seg.drill:hover, .seg.drill:focus-visible, .seg.on { stroke-width: 20px; }
+  .seg.drill:focus-visible { outline: none; }
+  .charts.hl .seg:not(.on) { opacity: .3; }
+  .legend tr.on td { background: var(--ts-sub); }
+  .legend .chev-r { margin-left: 4px; color: var(--ts-muted); }
+  /* preview of a project's tasks while pointing at it in the donuts or legend */
+  .peek { position: fixed; z-index: 30; width: 300px; max-width: calc(100vw - 16px); pointer-events: none;
+          background: var(--ts-card); border: 1px solid var(--ts-line); border-radius: 8px; padding: 10px 12px;
+          box-shadow: 0 8px 24px rgb(0 0 0 / .3); font-size: 12px; }
+  .peek-head { display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 13px; }
+  .peek-sum { margin: 2px 0 8px; color: var(--ts-muted); }
+  .peek ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 5px; }
+  .peek li { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; align-items: baseline; }
+  .peek .t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .peek .mini { grid-column: 1 / -1; height: 4px; border-radius: 2px; background: var(--ts-line); overflow: hidden; }
+  .peek .mini i { display: block; height: 100%; background: var(--c); }
+  .peek-more { margin-top: 6px; color: var(--ts-muted); }
+  .peek-cta { margin-top: 8px; padding-top: 6px; border-top: 1px solid var(--ts-line); color: var(--ts-accent); font-weight: 600; }
   .crumbs { margin: 0 0 var(--ts-gap); font-size: 13px; }
   .crumbs .hint { font-size: 12px; color: var(--ts-muted); }
   .linkbtn { border: 0; background: none; padding: 0; color: inherit; text-align: left; text-decoration: underline;
@@ -124,77 +213,128 @@
   .days th:first-child, .days td:first-child { min-width: 0; text-align: left; color: var(--ts-muted); font-weight: 400; }
   .days td.future { color: var(--ts-muted); }
   .range-sum { margin-top: calc(var(--ts-gap) * 2); font-weight: 600; }
-  details.schedule { margin-top: calc(var(--ts-gap) * 2); }
-  details.schedule summary { cursor: pointer; color: var(--ts-muted); font-size: 12px; }
-  details.schedule .bar { margin: var(--ts-gap) 0 0; }
   input[type=number] { width: 6em; }
 </style>
 </head>
 <body>
-<h1>Hours Grid</h1>
+<header class="top">
+  <h1>Hours Grid</h1>
+  <div class="actions">
+    <button id="editToggle" aria-pressed="false" title="Edit the time spent on tasks directly in the table">Edit time</button>
+    <span class="group">
+      <button id="copy" title="Tab-separated, pastes straight into Excel">Copy</button>
+      <button id="csv" title="Save a CSV file">CSV</button>
+    </span>
+    <button id="refresh" title="Reload tasks from Super Productivity">Refresh</button>
+  </div>
+</header>
 
-<div class="bar">
-  <div class="field"><span>Range</span>
-    <div class="group">
-      <button id="prev" title="Previous period" aria-label="Previous period">‹</button>
-      <select id="preset">
-        <option value="week">Week</option>
-        <option value="month">Month</option>
-        <option value="custom">Custom</option>
-      </select>
-      <button id="next" title="Next period" aria-label="Next period">›</button>
+<!-- Settings, in the order they shape the table: which days, which tasks, how time is rounded,
+     how it is written, and the target the hours are compared with. -->
+<div class="settings">
+  <fieldset class="set set-period">
+    <legend>Period</legend>
+    <div class="row">
+      <span class="group">
+        <button id="prev" title="Previous period" aria-label="Previous period">‹</button>
+        <select id="preset" aria-label="Period length">
+          <option value="week">Week</option>
+          <option value="month">Month</option>
+          <option value="custom">Custom</option>
+        </select>
+        <button id="next" title="Next period" aria-label="Next period">›</button>
+      </span>
       <button id="today">Today</button>
     </div>
-  </div>
-  <label class="field"><span>From</span><input type="date" id="from"></label>
-  <label class="field"><span>To</span><input type="date" id="to"></label>
-  <label class="field"><span>Round to</span>
-    <select id="step">
-      <option value="0">No rounding</option>
-      <option value="15">15 min</option>
-      <option value="30">30 min</option>
-      <option value="60">1 hour</option>
-    </select>
-  </label>
-  <label class="field"><span>Direction</span>
-    <select id="mode">
-      <option value="up">Up</option>
-      <option value="nearest">Nearest</option>
-      <option value="down">Down</option>
-    </select>
-  </label>
-  <label class="field"><span>Apply rounding to</span>
-    <select id="scope">
-      <option value="project-day">Project per day</option>
-      <option value="cell">Each task per day</option>
-    </select>
-  </label>
-  <label class="field"><span>Show as</span>
-    <select id="fmt">
-      <option value="decimal">Decimal hours</option>
-      <option value="hm">h:mm</option>
-    </select>
-  </label>
-  <label class="field"><span>Decimal mark</span>
-    <select id="decimal">
-      <option value=",">Comma (1,50)</option>
-      <option value=".">Point (1.50)</option>
-    </select>
-  </label>
-  <div class="field"><span>Data</span>
-    <div class="group">
-      <button id="refresh">Refresh</button>
-      <button id="copy" title="Tab-separated, pastes straight into Excel">Copy</button>
-      <button id="csv">CSV</button>
+    <div class="row">
+      <label class="field"><span>From</span><input type="date" id="from"></label>
+      <label class="field"><span>To</span><input type="date" id="to"></label>
     </div>
-  </div>
-  <div class="field"><span>Time</span>
-    <button id="editToggle" aria-pressed="false" title="Edit the time spent on tasks directly in the table">Edit time</button>
-  </div>
-</div>
+  </fieldset>
 
-<div class="field" style="margin-bottom: calc(var(--ts-gap) * 2)"><span>Tags <small>(none selected = all tasks)</small></span>
-  <div class="chips" id="tags" role="group" aria-label="Filter by tag"></div>
+  <fieldset class="set set-rounding">
+    <legend>Rounding</legend>
+    <div class="row">
+      <label class="field"><span>Round to</span>
+        <select id="step">
+          <option value="0">No rounding</option>
+          <option value="15">15 min</option>
+          <option value="30">30 min</option>
+          <option value="60">1 hour</option>
+        </select>
+      </label>
+      <label class="field"><span>Direction</span>
+        <select id="mode">
+          <option value="up">Up</option>
+          <option value="nearest">Nearest</option>
+          <option value="down">Down</option>
+        </select>
+      </label>
+      <label class="field"><span>Apply to</span>
+        <select id="scope">
+          <option value="project-day">Project per day</option>
+          <option value="cell">Each task per day</option>
+        </select>
+      </label>
+    </div>
+  </fieldset>
+
+  <fieldset class="set set-units">
+    <legend>Units</legend>
+    <div class="row">
+      <label class="field"><span>Show as</span>
+        <select id="fmt">
+          <option value="decimal">Decimal hours</option>
+          <option value="hm">h:mm</option>
+        </select>
+      </label>
+      <label class="field"><span>Decimal mark</span>
+        <select id="decimal">
+          <option value=",">Comma (1,50)</option>
+          <option value=".">Point (1.50)</option>
+        </select>
+      </label>
+    </div>
+  </fieldset>
+
+  <fieldset class="set set-filter">
+    <legend>Tasks</legend>
+    <div class="tagpick">
+      <button id="tagBtn" class="tagbtn" aria-haspopup="true" aria-expanded="false" aria-controls="tagPop">
+        <span id="tagBtnLabel">All tasks</span> <span aria-hidden="true">▾</span></button>
+      <div class="tagpop" id="tagPop" role="dialog" aria-label="Filter by tag" hidden>
+        <input type="search" id="tagSearch" placeholder="Find a tag…" aria-label="Find a tag" autocomplete="off">
+        <div class="taglist" id="tagList" role="group" aria-label="Tags"></div>
+        <div class="tagpop-foot"><span class="hint">Tasks with any of the ticked tags</span>
+          <button class="linkbtn" id="tagClear">Clear</button></div>
+      </div>
+    </div>
+    <div class="chips" id="tagSel" aria-label="Selected tags"></div>
+  </fieldset>
+
+  <fieldset class="set set-target">
+    <legend>Work target</legend>
+    <div class="row">
+      <label class="field"><span>Daily target</span>
+        <select id="targetSource">
+          <option value="sp">From Super Productivity</option>
+          <option value="custom">Custom</option>
+        </select>
+      </label>
+      <label class="field" id="customHoursField"><span>Hours per day</span>
+        <input type="number" id="customHours" min="0" max="24" step="0.25">
+      </label>
+      <label class="field"><span>Count</span>
+        <select id="balanceBasis">
+          <option value="exact">Exact time</option>
+          <option value="rounded">Rounded time</option>
+        </select>
+      </label>
+    </div>
+    <div class="field"><span>Work days</span>
+      <div class="chips days-chips" id="workDays" role="group" aria-label="Work days"></div>
+    </div>
+  </fieldset>
 </div>
 
 <div class="editbar" id="editbar" hidden>
@@ -213,36 +353,14 @@
 <section id="charts-section">
   <h2>Hours per project</h2>
   <div class="panel" id="charts"></div>
+  <div class="peek" id="peek" role="tooltip" hidden></div>
 </section>
 
 <section>
   <h2>Work time vs target</h2>
   <div class="panel">
     <div id="balance"></div>
-    <details class="schedule" id="schedule">
-      <summary>Work schedule</summary>
-      <div class="bar">
-        <label class="field"><span>Daily target</span>
-          <select id="targetSource">
-            <option value="sp">From Super Productivity</option>
-            <option value="custom">Custom</option>
-          </select>
-        </label>
-        <label class="field" id="customHoursField"><span>Hours per day</span>
-          <input type="number" id="customHours" min="0" max="24" step="0.25">
-        </label>
-        <div class="field"><span>Work days</span>
-          <div class="chips" id="workDays" role="group" aria-label="Work days"></div>
-        </div>
-        <label class="field"><span>Count</span>
-          <select id="balanceBasis">
-            <option value="exact">Exact tracked time</option>
-            <option value="rounded">Rounded time</option>
-          </select>
-        </label>
-      </div>
-      <p class="note" id="scheduleNote"></p>
-    </details>
+    <p class="note" id="scheduleNote"></p>
   </div>
 </section>
 
@@ -261,7 +379,10 @@
     preset: 'week', stepMinutes: 60, mode: 'up', scope: 'project-day', fmt: 'decimal', decimal: ',', tagIds: [],
     // Work time vs target. Super Productivity has work hours but no work days, so those live here.
     targetSource: 'sp', customDailyHours: 8, workDays: [1, 2, 3, 4, 5], balanceBasis: 'exact',
+    // Table layout: width of the task column in px, and the projects folded to their total row.
+    taskColWidth: 380, collapsed: [],
   };
+  const TASK_COL = { min: 160, max: 900, step: 20 };
   const WEEK_ORDER = [1, 2, 3, 4, 5, 6, 0];
   const FALLBACK_DAILY_MS = 8 * 3600000;
   // Categorical palette (Tableau 10), readable on light and dark backgrounds.
@@ -363,7 +484,7 @@
     $('fmt').value = settings.fmt; $('decimal').value = settings.decimal;
     $('decimal').disabled = settings.fmt === 'hm';
 
-    renderTagChips();
+    renderTagFilter();
     // A cell being edited (e.g. opened while the previous one was saving) survives the re-render.
     const open = $('sheet').querySelector('td.cell-edit input:not([data-done])');
     const reopen = open && editMode && { task: open.parentNode.dataset.task, day: open.parentNode.dataset.day, value: open.value };
@@ -391,7 +512,14 @@
     }
 
     const exact = settings.scope === 'project-day' && Number(settings.stepMinutes) > 0;
-    let h = '<table><thead><tr><th scope="col">Project / task</th>';
+    const folded = new Set(settings.collapsed);
+    const allFolded = sheet.projects.every((p) => folded.has(p.id));
+    const w = taskColWidth();
+    let h = `<table style="--days:${sheet.days.length}"><thead><tr><th scope="col"><div class="head-task"><span>Project / task</span>` +
+      `<button class="linkbtn tiny" id="foldAll">${allFolded ? 'Expand all' : 'Collapse all'}</button></div>` +
+      `<span class="col-grip" id="colGrip" role="separator" aria-orientation="vertical" tabindex="0" aria-label="Task column width"` +
+      ` aria-valuemin="${TASK_COL.min}" aria-valuemax="${TASK_COL.max}" aria-valuenow="${w}"` +
+      ` title="Drag to resize · double-click to reset"></span></th>`;
     for (const d of sheet.days) {
       const dt = C.fromDayKey(d);
       h += `<th scope="col" class="${dayCls(d)}"><span class="day-name">${DAY[dt.getDay()]}</span>${dt.getDate()}/${dt.getMonth() + 1}</th>`;
@@ -399,9 +527,14 @@
     h += '<th scope="col" class="total">Total</th></tr></thead><tbody>';
 
     for (const p of sheet.projects) {
-      h += `<tr class="project"><td>${esc(p.title)}</td>`;
+      const open = !folded.has(p.id);
+      const n = p.rows.length;
+      h += `<tr class="project"><td><button class="proj" aria-expanded="${open}" data-proj="${esc(p.id)}"` +
+        ` title="${open ? 'Collapse' : 'Expand'} ${esc(p.title)}">${CHEVRON}<span>${esc(p.title)}</span></button>` +
+        (open ? '' : `<span class="proj-count">${n} task${n === 1 ? '' : 's'}</span>`) + '</td>';
       for (const d of sheet.days) h += `<td class="${dayCls(d)}">${fmt(p.subtotal[d])}</td>`;
       h += `<td class="total">${fmt(p.total)}</td></tr>`;
+      if (!open) continue;
       for (const r of p.rows) {
         const c = exact ? 'exact ' : '';
         const tl = r.tagIds.map((id) => tagTitle(id)).filter(Boolean).join(', ');
@@ -423,6 +556,7 @@
     h += '<tr class="grand"><td>Total</td>';
     for (const d of sheet.days) h += `<td class="${dayCls(d)}">${fmt(sheet.dayTotals[d])}</td>`;
     h += `<td class="total">${fmt(sheet.grandTotal)}</td></tr></tbody></table>`;
+    $('sheet').style.setProperty('--task-w', w + 'px');
     $('sheet').innerHTML = h;
     if (reopen) {
       const td = $('sheet').querySelector(`td.cell-edit[data-task="${CSS.escape(reopen.task)}"][data-day="${reopen.day}"]`);
@@ -459,6 +593,10 @@
     const id = addOptions.get($('addTask').value.trim());
     if (!id) { status('Pick a task from the list.'); return; }
     if (!addedTaskIds.includes(id)) addedTaskIds.push(id);
+    // Open the project the row lands in, so the new row is visible.
+    const t = findTask(id), parent = t && t.parentId && findTask(t.parentId);
+    const pid = (t && t.projectId) || (parent && parent.projectId) || C.NO_PROJECT_ID;
+    if (settings.collapsed.includes(pid)) { settings.collapsed = settings.collapsed.filter((x) => x !== pid); saveSettings(); }
     $('addTask').value = '';
     render();
     const cell = $('sheet').querySelector(`td.cell-edit[data-task="${CSS.escape(id)}"]`);
@@ -562,6 +700,76 @@
   $('addTask').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); addRow(); } });
   $('undo').addEventListener('click', undo);
 
+  // ---------- table layout: collapsing projects, task column width ----------
+  const CHEVRON = '<svg class="chev" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+  function setFolded(ids) {
+    settings.collapsed = [...new Set(ids)];
+    saveSettings();
+    render();
+  }
+  $('sheet').addEventListener('click', (e) => {
+    const btn = e.target.closest('button.proj');
+    if (btn) {
+      const id = btn.dataset.proj;
+      const isOpen = btn.getAttribute('aria-expanded') === 'true';
+      setFolded(isOpen ? [...settings.collapsed, id] : settings.collapsed.filter((x) => x !== id));
+      const again = [...$('sheet').querySelectorAll('button.proj')].find((b) => b.dataset.proj === id);
+      if (again) again.focus();
+      return;
+    }
+    if (e.target.closest('#foldAll')) {
+      const ids = sheet.projects.map((p) => p.id);
+      const allFolded = ids.every((id) => settings.collapsed.includes(id));
+      // Folding all keeps projects folded in other periods; expanding all clears only the ones on screen.
+      setFolded(allFolded ? settings.collapsed.filter((id) => !ids.includes(id)) : [...settings.collapsed, ...ids]);
+      $('foldAll').focus();
+    }
+  });
+
+  function taskColWidth() {
+    const w = Number(settings.taskColWidth) || DEFAULTS.taskColWidth;
+    return Math.min(TASK_COL.max, Math.max(TASK_COL.min, Math.round(w)));
+  }
+  /** Resize live without re-rendering; `save` stores the width once the drag ends. */
+  function setTaskColWidth(px, save) {
+    settings.taskColWidth = Math.min(TASK_COL.max, Math.max(TASK_COL.min, Math.round(px)));
+    $('sheet').style.setProperty('--task-w', settings.taskColWidth + 'px');
+    const grip = $('colGrip');
+    if (grip) grip.setAttribute('aria-valuenow', String(settings.taskColWidth));
+    if (save) saveSettings();
+  }
+  $('sheet').addEventListener('pointerdown', (e) => {
+    const grip = e.target.closest('#colGrip');
+    if (!grip || e.button !== 0) return;
+    e.preventDefault();
+    const startX = e.clientX, startW = taskColWidth();
+    grip.setPointerCapture(e.pointerId);
+    grip.classList.add('dragging');
+    document.body.classList.add('resizing');
+    const move = (ev) => setTaskColWidth(startW + ev.clientX - startX, false);
+    const up = () => {
+      grip.removeEventListener('pointermove', move);
+      grip.removeEventListener('pointerup', up);
+      grip.removeEventListener('pointercancel', up);
+      grip.classList.remove('dragging');
+      document.body.classList.remove('resizing');
+      setTaskColWidth(settings.taskColWidth, true);
+    };
+    grip.addEventListener('pointermove', move);
+    grip.addEventListener('pointerup', up);
+    grip.addEventListener('pointercancel', up);
+  });
+  $('sheet').addEventListener('dblclick', (e) => {
+    if (e.target.closest('#colGrip')) setTaskColWidth(DEFAULTS.taskColWidth, true);
+  });
+  $('sheet').addEventListener('keydown', (e) => {
+    if (e.target.id !== 'colGrip') return;
+    const w = taskColWidth();
+    const next = { ArrowLeft: w - TASK_COL.step, ArrowRight: w + TASK_COL.step, Home: TASK_COL.min, End: TASK_COL.max }[e.key];
+    if (next != null) { e.preventDefault(); setTaskColWidth(next, true); }
+  });
+
   // ---------- donuts: hours per project ----------
   function projectColors(ids) {
     // Use the projects' own colours when they tell the projects apart; otherwise the palette.
@@ -582,8 +790,10 @@
       const pct = Math.round((it.value / total) * 100);
       arcs += `<circle cx="60" cy="60" r="${r}" fill="none" stroke="${esc(it.color)}" stroke-width="16"` +
         ` stroke-dasharray="${Math.max(0, len - gap)} ${circ}" stroke-dashoffset="${-offset}"` +
-        (it.drill ? ` class="seg drill" data-drill="${esc(it.id)}"` : ' class="seg"') + '>' +
-        `<title>${esc(it.title)}: ${fmt(it.value)} h (${pct} %)${it.drill ? ' — click for tasks' : ''}</title></circle>`;
+        (it.drill
+          ? ` class="seg drill" data-drill="${esc(it.id)}" tabindex="0" role="button"` +
+            ` aria-label="${esc(it.title)}: ${fmt(it.value)} h (${pct} %). Show its tasks">`
+          : ` class="seg"><title>${esc(it.title)}: ${fmt(it.value)} h (${pct} %)</title>`) + '</circle>';
       offset += len;
     }
     const label = `${caption}: ${shown.map((it) => `${it.title} ${fmt(it.value)} h`).join(', ')}`;
@@ -600,6 +810,7 @@
   const roundedCaption = () => `Rounded ${settings.mode} to ${settings.stepMinutes} min`;
 
   function renderCharts() {
+    peekId = null; $('peek').hidden = true; // the chart is rebuilt, so any preview is stale
     const items = C.projectShares(sheet, exactSheet);
     $('charts-section').hidden = !items.length;
     if (!items.length) { $('charts').innerHTML = ''; return; }
@@ -612,15 +823,15 @@
     const exactTotal = exactSheet.grandTotal, roundedTotal = sheet.grandTotal;
     const slices = (key) => items.map((it) => ({ id: it.id, title: it.title, value: it[key], color: colors[it.id], drill: true }));
 
-    let h = '<p class="crumbs">All projects <span class="hint">— click a project to see its tasks</span></p><div class="charts">';
+    let h = '<p class="crumbs">All projects <span class="hint">— point at a project for a preview, click it to open its tasks</span></p><div class="charts">';
     h += donutSvg(slices('exact'), 'Exact tracked time');
     if (rounded) h += donutSvg(slices('rounded'), roundedCaption());
     h += '<table class="legend num"><thead><tr><th scope="col">Project</th><th scope="col">Exact</th><th scope="col">Share</th>';
     if (rounded) h += '<th scope="col">Rounded</th><th scope="col">Share</th><th scope="col">Rounding</th>';
     h += '</tr></thead><tbody>';
     for (const it of items) {
-      h += `<tr><td><span class="sw" style="background:${esc(colors[it.id])}"></span>` +
-        `<button class="linkbtn" data-drill="${esc(it.id)}" title="Show the tasks in ${esc(it.title)}">${esc(it.title)}</button></td>` +
+      h += `<tr data-row="${esc(it.id)}"><td><span class="sw" style="background:${esc(colors[it.id])}"></span>` +
+        `<button class="linkbtn" data-drill="${esc(it.id)}">${esc(it.title)}</button><span class="chev-r" aria-hidden="true">›</span></td>` +
         `<td>${fmt(it.exact) || '0'}</td><td>${pct(it.exact, exactTotal)}</td>`;
       if (rounded) h += `<td>${fmt(it.rounded) || '0'}</td><td>${pct(it.rounded, roundedTotal)}</td>${diffCell(it.rounded - it.exact)}`;
       h += '</tr>';
@@ -688,7 +899,83 @@
   });
   $('charts').addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && drillProjectId) drillTo(null);
+    // Donut slices are SVG, so Enter and Space need wiring to act like the buttons they stand for.
+    const seg = e.target.closest('.seg.drill');
+    if (seg && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); drillTo(seg.getAttribute('data-drill')); }
   });
+
+  // ---------- donut preview ----------
+  // Pointing at (or tabbing to) a project in the donuts or the legend highlights it everywhere
+  // and shows its top tasks, so what a click opens is visible before clicking.
+  const PEEK_TASKS = 5;
+  let peekId = null;
+
+  function peekHtml(id) {
+    const p = C.taskShares(sheet, exactSheet, id);
+    if (!p) return '';
+    const items = C.projectShares(sheet, exactSheet);
+    const color = projectColors(items.map((it) => it.id))[id];
+    const rounded = Number(settings.stepMinutes) > 0;
+    const top = p.tasks.slice(0, PEEK_TASKS);
+    const max = Math.max(1, ...top.map((t) => t.exact));
+    let h = `<div class="peek-head"><span class="sw" style="background:${esc(color)}"></span>${esc(p.title)}</div>` +
+      `<div class="peek-sum num">${h0(p.exact)} h exact` + (rounded ? ` · ${h0(p.rounded)} h rounded` : '') +
+      ` · ${p.tasks.length} task${p.tasks.length === 1 ? '' : 's'}</div><ol class="num">`;
+    for (const t of top) {
+      h += `<li><span class="t">${esc(t.title)}</span><span>${h0(t.exact)}</span>` +
+        `<span class="mini" style="--c:${esc(color)}"><i style="width:${(t.exact / max) * 100}%"></i></span></li>`;
+    }
+    h += '</ol>';
+    if (p.tasks.length > PEEK_TASKS) h += `<div class="peek-more">+ ${p.tasks.length - PEEK_TASKS} more</div>`;
+    return h + '<div class="peek-cta">Click to open all tasks ›</div>';
+  }
+
+  function highlight(id) {
+    const box = $('charts').querySelector('.charts');
+    if (!box) return;
+    box.classList.toggle('hl', !!id);
+    for (const s of box.querySelectorAll('.seg.drill')) s.classList.toggle('on', s.getAttribute('data-drill') === id);
+    for (const r of box.querySelectorAll('tr[data-row]')) r.classList.toggle('on', r.dataset.row === id);
+  }
+
+  /** Show the preview for a project next to point (x, y) — the pointer, or the focused element's corner. */
+  function showPeek(id, x, y) {
+    if (drillProjectId) return;
+    const peek = $('peek');
+    if (id !== peekId) {
+      peekId = id;
+      peek.innerHTML = peekHtml(id);
+      highlight(id);
+    }
+    peek.hidden = false;
+    const pad = 14, r = peek.getBoundingClientRect();
+    const left = x + pad + r.width > window.innerWidth - 8 ? x - pad - r.width : x + pad;
+    const top = Math.min(Math.max(8, y + pad), window.innerHeight - r.height - 8);
+    peek.style.left = Math.max(8, left) + 'px';
+    peek.style.top = top + 'px';
+  }
+  function hidePeek() {
+    peekId = null;
+    $('peek').hidden = true;
+    highlight(null);
+  }
+  $('charts').addEventListener('pointermove', (e) => {
+    const el = e.target.closest('[data-drill]');
+    const id = el && el.getAttribute('data-drill');
+    if (id && e.pointerType !== 'touch') showPeek(id, e.clientX, e.clientY); else if (peekId) hidePeek();
+  });
+  $('charts').addEventListener('pointerleave', hidePeek);
+  $('charts').addEventListener('focusin', (e) => {
+    const el = e.target.closest('[data-drill]');
+    const id = el && el.getAttribute('data-drill');
+    if (!id) { hidePeek(); return; }
+    if (!el.matches(':focus-visible')) return; // focus moved by a click or by code, not the keyboard
+    const r = el.getBoundingClientRect();
+    showPeek(id, r.right, r.top);
+  });
+  $('charts').addEventListener('focusout', (e) => { if (!$('charts').contains(e.relatedTarget)) hidePeek(); });
+  $('charts').addEventListener('click', hidePeek, true);
+  window.addEventListener('scroll', () => { if (peekId) hidePeek(); }, true);
 
   // ---------- work time vs target ----------
   function spDailyMs() {
@@ -809,21 +1096,70 @@
   function tagTitle(id) { const t = data.tags.find((x) => x.id === id); return t ? t.title : ''; }
   function selectedTagTitles() { return settings.tagIds.map(tagTitle).filter(Boolean); }
   function tagTitleMap() { return Object.fromEntries(data.tags.map((t) => [t.id, t.title])); }
-  function renderTagChips() {
-    const box = $('tags');
-    if (!data.tags.length) { box.innerHTML = '<span class="row-tags">No tags yet.</span>'; return; }
-    const sel = new Set(settings.tagIds);
-    box.innerHTML = data.tags.map((t) => {
-      const color = t.color || (t.theme && t.theme.primary) || '';
-      return `<label class="chip"${color ? ` style="--dot:${esc(color)}"` : ''}>` +
-        `<input type="checkbox" value="${esc(t.id)}"${sel.has(t.id) ? ' checked' : ''}><span class="dot"></span>${esc(t.title)}</label>`;
-    }).join('');
+  const tagColor = (t) => t.color || (t.theme && t.theme.primary) || '';
+  const dotStyle = (t) => (tagColor(t) ? ` style="--dot:${esc(tagColor(t))}"` : '');
+
+  /** The button label and the chips of the selected tags. The list itself is built when the menu opens. */
+  function renderTagFilter() {
+    const chosen = settings.tagIds.map((id) => data.tags.find((t) => t.id === id)).filter(Boolean);
+    $('tagBtnLabel').textContent = chosen.length ? `Tags (${chosen.length})` : data.tags.length ? 'All tasks · filter by tag' : 'No tags yet';
+    $('tagBtn').disabled = !data.tags.length;
+    $('tagSel').innerHTML = chosen.map((t) =>
+      `<button class="chip sel" data-untag="${esc(t.id)}"${dotStyle(t)} title="Remove ${esc(t.title)} from the filter">` +
+      `<span class="dot"></span>${esc(t.title)}<span class="x" aria-hidden="true">×</span></button>`).join('');
+    if (!$('tagPop').hidden) syncTagList();
   }
-  $('tags').addEventListener('change', (e) => {
+  function renderTagList() {
+    const q = $('tagSearch').value.trim().toLowerCase();
+    const sel = new Set(settings.tagIds);
+    const shown = data.tags.filter((t) => !q || t.title.toLowerCase().includes(q));
+    $('tagList').innerHTML = shown.length
+      ? shown.map((t) => `<label class="tagopt"${dotStyle(t)}><input type="checkbox" value="${esc(t.id)}"${sel.has(t.id) ? ' checked' : ''}>` +
+        `<span class="dot"></span>${esc(t.title)}</label>`).join('')
+      : '<span class="hint">No tag matches.</span>';
+  }
+  /** Tick boxes to match the settings without rebuilding the list, so focus stays put. */
+  function syncTagList() {
+    const sel = new Set(settings.tagIds);
+    for (const i of $('tagList').querySelectorAll('input')) i.checked = sel.has(i.value);
+  }
+  function setTags(ids) { settings.tagIds = ids; saveSettings(); render(); }
+
+  function openTagPop() {
+    $('tagSearch').value = '';
+    $('tagSearch').hidden = data.tags.length < 8; // a short list needs no search box
+    renderTagList();
+    $('tagPop').hidden = false;
+    $('tagBtn').setAttribute('aria-expanded', 'true');
+    const first = $('tagSearch').hidden ? $('tagList').querySelector('input') : $('tagSearch');
+    if (first) first.focus();
+  }
+  function closeTagPop(focusButton) {
+    if ($('tagPop').hidden) return;
+    $('tagPop').hidden = true;
+    $('tagBtn').setAttribute('aria-expanded', 'false');
+    if (focusButton) $('tagBtn').focus();
+  }
+  $('tagBtn').addEventListener('click', () => ($('tagPop').hidden ? openTagPop() : closeTagPop(false)));
+  $('tagSearch').addEventListener('input', renderTagList);
+  $('tagList').addEventListener('change', (e) => {
     if (!e.target.matches('input[type=checkbox]')) return;
-    settings.tagIds = [...$('tags').querySelectorAll('input:checked')].map((i) => i.value);
-    saveSettings(); render();
+    const id = e.target.value;
+    setTags(e.target.checked ? [...settings.tagIds, id] : settings.tagIds.filter((x) => x !== id));
   });
+  $('tagClear').addEventListener('click', () => setTags([]));
+  $('tagSel').addEventListener('click', (e) => {
+    const chip = e.target.closest('[data-untag]');
+    if (!chip) return;
+    const next = chip.nextElementSibling || chip.previousElementSibling;
+    const nextId = next && next.dataset.untag;
+    setTags(settings.tagIds.filter((x) => x !== chip.dataset.untag));
+    const focusTo = nextId && $('tagSel').querySelector(`[data-untag="${CSS.escape(nextId)}"]`);
+    (focusTo || $('tagBtn')).focus();
+  });
+  $('tagPop').addEventListener('keydown', (e) => { if (e.key === 'Escape') { e.preventDefault(); closeTagPop(true); } });
+  document.addEventListener('pointerdown', (e) => { if (!e.target.closest('.tagpick')) closeTagPop(false); });
+  document.addEventListener('focusin', (e) => { if (!e.target.closest('.tagpick')) closeTagPop(false); });
   function fileSuffix() {
     const t = selectedTagTitles().map((x) => x.replace(/[^\w-]+/g, '')).filter(Boolean);
     return t.length ? `_${t.join('-')}` : '';
@@ -923,8 +1259,10 @@
     const m = 60000;
     return {
       schedule: { isWorkStartEndEnabled: true, workStart: '8:00', workEnd: '17:00', isLunchBreakEnabled: true, lunchBreakStart: '12:00', lunchBreakEnd: '13:00' },
-      projects: [{ id: 'p1', title: 'Office — Hospital project' }, { id: 'p2', title: 'Freelance — Website' }],
-      tags: [{ id: 'w', title: 'Office', color: '#607D8B' }, { id: 'n', title: 'Freelance', color: '#1E88E5' }, { id: 'pe', title: 'Personal', color: '#43A047' }],
+      projects: [{ id: 'p1', title: 'Office — Hospital project' }, { id: 'p2', title: 'Freelance — Website' }, { id: 'p3', title: 'Office — Campus phase 04' }],
+      tags: [{ id: 'w', title: 'Office', color: '#607D8B' }, { id: 'n', title: 'Freelance', color: '#1E88E5' }, { id: 'pe', title: 'Personal', color: '#43A047' },
+        { id: 'b', title: '$ Billable', color: '#F9A825' }, { id: 'nb', title: '$ No billable', color: '#8D6E63' },
+        { id: 'u', title: 'Urgent', color: '#AB47BC' }, { id: 'bl', title: 'Blocked', color: '#FDD835' }, { id: 'i', title: 'Internal meeting', color: '#E53935' }],
       tasks: [
         { id: 't1', title: 'Clash detection', projectId: 'p1', tagIds: ['w'], subTaskIds: [], timeSpentOnDay: { [d[0]]: 20 * m, [d[1]]: 95 * m } },
         { id: 't2', title: 'IFC export', projectId: 'p1', tagIds: ['w'], subTaskIds: [], timeSpentOnDay: { [d[0]]: 20 * m, [d[2]]: 3 * 60 * m } },
@@ -932,6 +1270,9 @@
         { id: 't4', title: 'Website', projectId: 'p2', tagIds: ['n'], subTaskIds: ['t5'], timeSpentOnDay: { [d[3]]: 50 * m } },
         { id: 't5', title: 'Fonts', projectId: 'p2', parentId: 't4', subTaskIds: [], isDone: true, timeSpentOnDay: { [d[3]]: 50 * m } },
         { id: 't6', title: 'Site visit report', projectId: 'p1', tagIds: ['w'], subTaskIds: [], timeSpentOnDay: {} },
+        { id: 't7', title: 'Phase 04 Final Delivery › Update the section drawings of the building phases in A1 with the building colours', projectId: 'p3', tagIds: ['w', 'b'], subTaskIds: [], timeSpentOnDay: { [d[0]]: 150 * m, [d[1]]: 120 * m, [d[2]]: 110 * m } },
+        { id: 't8', title: 'Exploded floors of houses 1–6', projectId: 'p3', tagIds: ['w', 'b'], subTaskIds: [], timeSpentOnDay: { [d[3]]: 7 * 60 * m, [d[4]]: 6 * 60 * m } },
+        { id: 't9', title: 'Internal meeting — project start', projectId: 'p3', tagIds: ['w', 'i'], subTaskIds: [], timeSpentOnDay: { [d[2]]: 73 * m } },
       ],
     };
   }

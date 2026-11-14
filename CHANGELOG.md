@@ -4,6 +4,14 @@ All notable changes to this plugin. Versions follow the `version` in `src/manife
 
 ## Unreleased
 
+- **New icon** (`grid-add-26` from Zendesk Garden, Apache 2.0). The old outline icon showed as a filled black square in the Super Productivity menu; the new one is drawn with fills, so it follows the theme colour.
+- **Settings grouped at the top**: Period, Rounding, Units, Tasks (tag filter) and Work target, each in its own labelled box. The work schedule is no longer hidden at the bottom. Edit time, Copy, CSV and Refresh sit next to the title.
+- **Tag filter as a menu**: one button opens the list of tags (with a search box once there are 8 or more); only the selected tags stay on screen, as chips you can remove with one click.
+- **Collapsible projects**: click a project row to fold it to its total; *Collapse all* / *Expand all* in the table header. Folded projects are remembered.
+- **Resizable task column**: drag the edge of the *Project / task* column (or focus it and use ← →); double-click resets it. The table is only as wide as its columns, so on wide screens the hours stay next to the task names.
+- **Header, task column and total row stay in view**: the table scrolls inside its own box, at most one screen high, so long lists and month views keep the days and the totals visible.
+- **Donut preview**: pointing at a project in the donuts or the legend (or tabbing to it) highlights it in both donuts and the legend and shows its top tasks, before you click to open them. Donut slices can now be reached with the keyboard.
+
 - The exported CSV is now named `hours-grid_<from>_<to>[_<tags>].csv` (was `timesheet_…`).
 - Internal rename to match the plugin name: `src/timesheet-core.js` → `src/hours-grid-core.js`, `TimesheetCore` → `HoursGridCore`, `buildTimesheet` → `buildHoursGrid`. No change in behaviour.
 

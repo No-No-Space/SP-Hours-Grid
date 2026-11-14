@@ -87,3 +87,5 @@ Issues and pull requests are welcome. Run `npm test` before opening a PR; the ca
 ## License
 
 MIT
+
+The plugin icon is `grid-add-26` from [Garden SVG Icons](https://github.com/zendeskgarden/svg-icons) by Zendesk, licensed under [Apache 2.0](https://github.com/zendeskgarden/svg-icons/blob/main/LICENSE.md).
